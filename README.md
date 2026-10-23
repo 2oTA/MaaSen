@@ -1,43 +1,41 @@
 <!-- markdownlint-disable MD033 MD041 -->
-<p align="center">
-  <img alt="LOGO" src="https://cdn.jsdelivr.net/gh/MaaAssistantArknights/design@main/v1/icons/maa-logo_512x512.png" width="256" height="256" />
-</p>
-
 <div align="center">
 
-# MaaPracticeBoilerplate
+# MaaSen
+
+**织梦森林 自动化挂机工具**
 
 </div>
 
-本仓库为 [MaaFramework](https://github.com/MaaXYZ/MaaFramework) 所提供的项目模板，开发者可基于此模板直接创建自己的 MaaXXX 项目。
+基于 [MaaFramework](https://github.com/MaaXYZ/MaaFramework) 开发的《织梦森林》日常自动化工具，源自 [MaaPracticeBoilerplate](https://github.com/MaaXYZ/MaaPracticeBoilerplate) 项目模板。
 
-> **MaaFramework** 是基于图像识别技术、运用 [MAA](https://github.com/MaaAssistantArknights/MaaAssistantArknights) 开发经验去芜存菁、完全重写的新一代自动化黑盒测试框架。
-> 低代码的同时仍拥有高扩展性，旨在打造一款丰富、领先、且实用的开源库，助力开发者轻松编写出更好的黑盒测试程序，并推广普及。
+## 功能
 
-## 即刻开始
+- ✅ 进入游戏：桌面找图标 → 等待加载 → 识别点击「进入森林」→ 自动关闭弹窗广告 → 点击主界面入口
+- ✅ 居中视野：捏合缩放到最小 + 两段拖动自动居中，每次进入后视角一致
 
-**请不要直接克隆本仓库！你应该通过模板创建自己的项目！**  
+（更多功能开发中……）
 
-请阅读 [如何开发](./docs/zh_cn/develop/how_to_develop.md)。
+## 使用方法
 
-向本模板仓库提交改动前，请阅读 [PR 规范](./docs/zh_cn/develop/pull_request_guidelines.md)。
+1. 前往 [Releases](../../releases) 下载最新版本 zip
+2. 解压后双击运行，界面由通用 UI（MFAAvalonia）提供
+3. 连接安卓设备 / 模拟器（需开启 ADB），选择「安卓端」控制器
+4. 勾选「进入游戏」任务，点击开始
 
-## 生态共建
+## 开发
 
-MAA 正计划建设为一类项目，而非舟的单一软件。
+- 开发文档见 [docs/zh_cn/develop/](./docs/zh_cn/develop/how_to_develop.md)
+- 本地校验：`npm ci && npx @nekosu/maa-tools check`
+- 任务链代码：`assets/resource/pipeline/launch_game.json`
+- 发版：推送 tag（如 `v0.1.0`）后 CI 自动打包发布
 
-若您的项目依赖于 MaaFramework，我们欢迎您将它命名为 MaaXXX, MXA, MAX 等等。当然，这是许可而不是限制，您也可以自由选择其他与 MAA 无关的名字，完全取决于您自己的想法！
+## 免责声明
 
-同时，我们也非常欢迎您提出 PR，在 [社区项目列表](https://github.com/MaaXYZ/MaaFramework#%E7%A4%BE%E5%8C%BA%E9%A1%B9%E7%9B%AE) 中添加上您的项目！
-
-## 常见问题
-
-请阅读 [常见问题](./docs/zh_cn/develop/faq.md)。
+本项目仅供学习交流使用，使用本工具产生的一切后果（含账号风险）请自行承担。
 
 ## 鸣谢
 
-本项目由 **[MaaFramework](https://github.com/MaaXYZ/MaaFramework)** 强力驱动！
+本项目由 **[MaaFramework](https://github.com/MaaXYZ/MaaFramework)** 强力驱动，UI 由 [MFAAvalonia](https://github.com/SweetSmellFox/MFAAvalonia) 提供。
 
-感谢以下开发者对本项目作出的贡献（下面链接改成你自己的项目地址）:
-
-[![Contributors](https://contrib.rocks/image?repo=MaaXYZ/MaaFramework&max=1000)](https://github.com/MaaXYZ/MaaFramework/graphs/contributors)
+感谢 [MaaPracticeBoilerplate](https://github.com/MaaXYZ/MaaPracticeBoilerplate) 模板。
