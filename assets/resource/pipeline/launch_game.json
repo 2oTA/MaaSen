@@ -1,0 +1,124 @@
+{
+    "LaunchGame": {
+        "recognition": "TemplateMatch",
+        "template": "appIcon.png",
+        "threshold": 0.6,
+        "action": "Click",
+        "post_delay": 1000,
+        "next": [
+            "WaitLoading"
+        ],
+        "on_error": [
+            "SaveScreenForDebug"
+        ]
+    },
+    "WaitLoading": {
+        "recognition": "DirectHit",
+        "pre_delay": 10000,
+        "action": "DoNothing",
+        "timeout": 120000,
+        "next": [
+            "EnterForest"
+        ],
+        "on_error": [
+            "SaveScreenForDebug"
+        ]
+    },
+    "EnterForest": {
+        "recognition": "OCR",
+        "expected": "进入森林",
+        "action": "Click",
+        "post_delay": 1000,
+        "next": [
+            "CloseAd"
+        ],
+        "on_error": [
+            "GoForestStage"
+        ]
+    },
+    "CloseAd": {
+        "recognition": "TemplateMatch",
+        "template": "close.png",
+        "rate_limit": 500,
+        "action": "Click",
+        "next": [
+            "CloseAd"
+        ],
+        "timeout": 1500,
+        "on_error": [
+            "GoForestStage"
+        ]
+    },
+    "GoForestStage": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 60000,
+        "next": [
+            "GoForest"
+        ],
+        "on_error": [
+            "SaveScreenForDebug"
+        ]
+    },
+    "GoForest": {
+        "recognition": "TemplateMatch",
+        "template": "forest.png",
+        "green_mask": true,
+        "action": "Click",
+        "repeat": 2,
+        "repeat_delay": 300,
+        "next": [
+            "ZoomOutAll"
+        ],
+        "on_error": [
+            "SaveScreenForDebug"
+        ]
+    },
+    "ZoomOutAll": {
+        "recognition": "DirectHit",
+        "action": "MultiSwipe",
+        "swipes": [
+            {
+                "contact": 0,
+                "begin": [360, 420],
+                "end": [360, 600],
+                "duration": 300
+            },
+            {
+                "contact": 1,
+                "begin": [360, 880],
+                "end": [360, 700],
+                "duration": 300
+            }
+        ],
+        "repeat": 4,
+        "repeat_delay": 300,
+        "next": [
+            "PanView"
+        ]
+    },
+    "PanView": {
+        "recognition": "DirectHit",
+        "action": "Swipe",
+        "begin": [240, 700],
+        "end": [600, 600],
+        "duration": 300,
+        "repeat": 2,
+        "repeat_delay": 300,
+        "next": [
+            "CenterAdjust"
+        ]
+    },
+    "CenterAdjust": {
+        "recognition": "DirectHit",
+        "action": "Swipe",
+        "begin": [677, 700],
+        "end": [326, 642],
+        "duration": 300,
+        "end_hold": 300
+    },
+    "SaveScreenForDebug": {
+        "recognition": "DirectHit",
+        "action": "Screencap"
+    }
+}
