@@ -71,39 +71,20 @@
         "next": [
             "ReturnToForest"
         ],
+        // 扫描动作耗时不短，这里只控制等待返回按钮的时间
+        "timeout": 5000,
         "on_error": [
             "SaveScreenForDebug"
         ]
     },
     "ReturnToForest": {
-        "recognition": "DirectHit",
-        "action": "Click",
-        // 底部导航中间的「森林」按钮
-        "target": [
-            360,
-            1204
-        ],
-        "post_delay": 1500,
-        "next": [
-            "WaitForest"
-        ]
-    },
-    "WaitForest": {
-        "recognition": "DirectHit",
-        "action": "DoNothing",
-        "timeout": 8000,
-        "next": [
-            "ForestVisible"
-        ],
-        "on_error": [
-            "SaveScreenForDebug"
-        ]
-    },
-    "ForestVisible": {
         "recognition": "TemplateMatch",
         "template": "forest.png",
         "green_mask": true,
-        "action": "DoNothing"
+        // 底部导航的森林按钮，阈值略低一些以适配不同背景
+        "threshold": 0.6,
+        "action": "Click",
+        "post_delay": 1500
     },
     // 供 scan_flowers 调用：对花名区域做一次 OCR
     "FlowerListOCR": {
