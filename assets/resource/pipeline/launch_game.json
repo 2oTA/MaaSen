@@ -11,9 +11,7 @@
         "next": [
             "EnterForest"
         ],
-        // 游戏已经在标题界面时可以直接点「进入森林」
         "on_error": [
-            "EnterForest",
             "SaveScreenForDebug"
         ]
     },
