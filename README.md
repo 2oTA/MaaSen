@@ -44,6 +44,7 @@
 - 开发文档见 [docs/zh_cn/develop/](./docs/zh_cn/develop/how_to_develop.md)
 - 任务链：`assets/resource/pipeline/launch_game.json`（进入游戏）、`assets/resource/pipeline/reset_view.json`（复位视野）
 - 默认参数：`assets/resource/default_pipeline.json`
+- 农田地块坐标：[docs/zh_cn/farm/plots.md](./docs/zh_cn/farm/plots.md)
 - 本地校验：`npm ci && npx @nekosu/maa-tools check`
 - 本地打包前先初始化模型子模块：`git submodule update --init --recursive`
 - 发版：推送 tag（如 `v0.1.0`）后 CI 自动打包发布
