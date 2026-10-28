@@ -13,6 +13,7 @@
 
 - ✅ **进入游戏**：模拟器桌面点击游戏图标 → 等待加载 → 点击「进入森林」→ 自动关闭开屏广告 → 点击主界面的森林入口
 - ✅ **复位视野**：双指捏合缩放到最小，再把镜头拖回中央，每次进入森林后视角一致
+- 🔄 **更新数据**：进入花房读取已拥有的花，结果写入 `config/flowers.json`，供后续种植选择使用
 
 （更多功能开发中……）
 
@@ -42,9 +43,10 @@
 ## 开发
 
 - 开发文档见 [docs/zh_cn/develop/](./docs/zh_cn/develop/how_to_develop.md)
-- 任务链：`assets/resource/pipeline/launch_game.json`（进入游戏）、`assets/resource/pipeline/reset_view.json`（复位视野）
+- 任务链：`assets/resource/pipeline/launch_game.json`（进入游戏）、`reset_view.json`（复位视野）、`greenhouse.json`（更新数据）
 - 默认参数：`assets/resource/default_pipeline.json`
 - 农田地块坐标：[docs/zh_cn/farm/plots.md](./docs/zh_cn/farm/plots.md)
+- 「更新数据」依赖 Python Agent：需要本机 Python 并 `pip install MaaFw`（发版前需改为内置解释器）
 - 本地校验：`npm ci && npx @nekosu/maa-tools check`
 - 本地打包前先初始化模型子模块：`git submodule update --init --recursive`
 - 发版：推送 tag（如 `v0.1.0`）后 CI 自动打包发布

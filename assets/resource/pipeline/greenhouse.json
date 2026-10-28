@@ -1,0 +1,46 @@
+{
+    // 更新数据：点击花房图标，读取花房中已拥有的花，写入 config/flowers.json
+    "UpdateFlowerData": {
+        "recognition": "TemplateMatch",
+        "template": "greenhouse.png",
+        "green_mask": true,
+        "threshold": 0.7,
+        "action": "Click",
+        // 等待花房页面加载
+        "post_delay": 2000,
+        // 扫描失败时最多重试约 10 秒
+        "timeout": 10000,
+        "next": [
+            "ScanFlowers"
+        ],
+        "on_error": [
+            "SaveScreenForDebug"
+        ]
+    },
+    "ScanFlowers": {
+        "recognition": "Custom",
+        "custom_recognition": "scan_flowers",
+        "custom_recognition_param": {
+            // 花名列表区域（720x1280 坐标）
+            "roi": [
+                27,
+                266,
+                663,
+                712
+            ],
+            "library": "resource/花朵库.txt",
+            "output": "config/flowers.json"
+        },
+        "action": "DoNothing"
+    },
+    // 供 scan_flowers 调用：整段花名区域做一次 OCR
+    "FlowerListOCR": {
+        "recognition": "OCR",
+        "roi": [
+            27,
+            266,
+            663,
+            712
+        ]
+    }
+}

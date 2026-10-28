@@ -26,6 +26,13 @@
             ]
         }
     ],
+    // 自定义识别/动作（如「更新数据」）由 Python Agent 提供
+    "agent": {
+        "child_exec": "python",
+        "child_args": [
+            "./agent/main.py"
+        ]
+    },
     "task": [
         {
             "name": "进入游戏",
@@ -38,6 +45,12 @@
             "entry": "ResetView",
             "default_check": true,
             "description": "缩放到最小并将镜头拖回中央。与「进入游戏」一起勾选时会在进入森林后自动执行"
+        },
+        {
+            "name": "更新数据",
+            "entry": "UpdateFlowerData",
+            "default_check": false,
+            "description": "进入花房读取已拥有的花，结果写入 config/flowers.json，供后续种植选择使用"
         }
     ]
 }
