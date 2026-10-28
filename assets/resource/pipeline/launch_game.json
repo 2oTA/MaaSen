@@ -1,26 +1,19 @@
 {
+    // 进入游戏：模拟器桌面点击游戏图标 → 等待加载 → 点击「进入森林」→ 关闭开屏广告 → 点击主界面的森林入口
     "LaunchGame": {
         "recognition": "TemplateMatch",
         "template": "appIcon.png",
         "threshold": 0.6,
         "action": "Click",
         "post_delay": 1000,
-        "next": [
-            "WaitLoading"
-        ],
-        "on_error": [
-            "SaveScreenForDebug"
-        ]
-    },
-    "WaitLoading": {
-        "recognition": "DirectHit",
-        "pre_delay": 10000,
-        "action": "DoNothing",
-        "timeout": 120000,
+        // 等待游戏启动动画与加载结束，直到「进入森林」出现
+        "timeout": 180000,
         "next": [
             "EnterForest"
         ],
+        // 游戏已经在标题界面时可以直接点「进入森林」
         "on_error": [
+            "EnterForest",
             "SaveScreenForDebug"
         ]
     },
@@ -29,11 +22,13 @@
         "expected": "进入森林",
         "action": "Click",
         "post_delay": 1000,
+        // 等待开屏广告出现；没有广告时超时后直接去等主界面
+        "timeout": 30000,
         "next": [
             "CloseAd"
         ],
         "on_error": [
-            "GoForestStage"
+            "WaitMainScene"
         ]
     },
     "CloseAd": {
@@ -41,17 +36,21 @@
         "template": "close.png",
         "rate_limit": 500,
         "action": "Click",
+        // 防止关闭按钮常驻时无限点击
+        "max_hit": 10,
+        "timeout": 1500,
+        // 连续关闭叠在一起的多个广告
         "next": [
             "CloseAd"
         ],
-        "timeout": 1500,
         "on_error": [
-            "GoForestStage"
+            "WaitMainScene"
         ]
     },
-    "GoForestStage": {
+    "WaitMainScene": {
         "recognition": "DirectHit",
         "action": "DoNothing",
+        // 等待主界面加载完成，轮询森林入口
         "timeout": 60000,
         "next": [
             "GoForest"
@@ -65,57 +64,10 @@
         "template": "forest.png",
         "green_mask": true,
         "action": "Click",
+        // 保留原有双击，避免个别情况下第一次点击未被响应
         "repeat": 2,
         "repeat_delay": 300,
-        "next": [
-            "ZoomOutAll"
-        ],
-        "on_error": [
-            "SaveScreenForDebug"
-        ]
-    },
-    "ZoomOutAll": {
-        "recognition": "DirectHit",
-        "action": "MultiSwipe",
-        "swipes": [
-            {
-                "contact": 0,
-                "begin": [360, 420],
-                "end": [360, 600],
-                "duration": 300
-            },
-            {
-                "contact": 1,
-                "begin": [360, 880],
-                "end": [360, 700],
-                "duration": 300
-            }
-        ],
-        "repeat": 4,
-        "repeat_delay": 300,
-        "next": [
-            "PanView"
-        ]
-    },
-    "PanView": {
-        "recognition": "DirectHit",
-        "action": "Swipe",
-        "begin": [240, 700],
-        "end": [600, 600],
-        "duration": 300,
-        "repeat": 2,
-        "repeat_delay": 300,
-        "next": [
-            "CenterAdjust"
-        ]
-    },
-    "CenterAdjust": {
-        "recognition": "DirectHit",
-        "action": "Swipe",
-        "begin": [677, 700],
-        "end": [326, 642],
-        "duration": 300,
-        "end_hold": 300
+        "post_delay": 1000
     },
     "SaveScreenForDebug": {
         "recognition": "DirectHit",

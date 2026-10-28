@@ -1,0 +1,12 @@
+{
+    // 全局默认参数，节点中未显式设置时生效
+    // 文档：https://maafw.xyz/docs/3.1-PipelineProtocol#默认属性
+    "Default": {
+        // 识别轮询间隔，默认 1000 偏慢
+        "rate_limit": 500
+    },
+    "TemplateMatch": {
+        "recognition": "TemplateMatch",
+        "threshold": 0.7
+    }
+}

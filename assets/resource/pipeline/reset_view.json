@@ -1,0 +1,80 @@
+{
+    // 复位视野：双指捏合缩放到最小，再拖动镜头回到中央
+    "ResetView": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        // 等待进入森林后的场景加载
+        "pre_delay": 3000,
+        "next": [
+            "ZoomOutToMin"
+        ]
+    },
+    "ZoomOutToMin": {
+        "recognition": "DirectHit",
+        "action": "MultiSwipe",
+        // 两根手指反向滑动，等价于捏合缩小
+        "swipes": [
+            {
+                "contact": 0,
+                "begin": [
+                    360,
+                    420
+                ],
+                "end": [
+                    360,
+                    600
+                ],
+                "duration": 300
+            },
+            {
+                "contact": 1,
+                "begin": [
+                    360,
+                    880
+                ],
+                "end": [
+                    360,
+                    700
+                ],
+                "duration": 300
+            }
+        ],
+        "repeat": 4,
+        "repeat_delay": 300,
+        "next": [
+            "PanToCenter"
+        ]
+    },
+    "PanToCenter": {
+        "recognition": "DirectHit",
+        "action": "Swipe",
+        "begin": [
+            240,
+            700
+        ],
+        "end": [
+            600,
+            600
+        ],
+        "duration": 300,
+        "repeat": 2,
+        "repeat_delay": 300,
+        "next": [
+            "CenterAdjust"
+        ]
+    },
+    "CenterAdjust": {
+        "recognition": "DirectHit",
+        "action": "Swipe",
+        "begin": [
+            677,
+            700
+        ],
+        "end": [
+            326,
+            642
+        ],
+        "duration": 300,
+        "end_hold": 300
+    }
+}
