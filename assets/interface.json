@@ -10,7 +10,7 @@
     "welcome": "欢迎使用 MaaSen！使用前请把模拟器停在游戏所在桌面，并确认游戏图标可见。使用说明见 GitHub 仓库 README。",
     // 填写项目地址和版本号可实现自动更新功能
     "github": "https://github.com/2oTA/MaaSen",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "controller": [
         {
             "name": "安卓端",
