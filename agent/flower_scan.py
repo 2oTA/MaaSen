@@ -1,21 +1,32 @@
 import difflib
 import json
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 
 from maa.agent.agent_server import AgentServer
 from maa.context import Context
-from maa.custom_recognition import CustomRecognition
+from maa.custom_action import CustomAction
 
-# 花房列表区域（720x1280 坐标）
+# 花名列表区域（720x1280 坐标）
 DEFAULT_ROI = [27, 266, 663, 712]
-UNOWNED_KEYWORDS = ("未获得", "末获得")
+DEFAULT_SCROLL = {"begin": [360, 900], "end": [360, 560], "duration": 700, "delay": 700}
 PUNCTUATION = re.compile(r"[\s\·・．.。,，、:：;；'\"“”‘’()（）\[\]【】<>《》_\-—~!！?？|/\\]+")
 
 
 def normalize(text: str) -> str:
     return PUNCTUATION.sub("", text or "")
+
+
+def is_unowned(text: str) -> bool:
+    """识别「未获得」分隔行；容忍 OCR 把「获」认成别的字时只剩部分特征。"""
+    normalized = normalize(text)
+    if not normalized:
+        return False
+    if "未获得" in normalized or "末获得" in normalized:
+        return True
+    return "获" in normalized and ("未" in normalized or "末" in normalized)
 
 
 def base_dir() -> Path:
@@ -54,12 +65,19 @@ def match_name(text: str, pairs: list[tuple[str, str]]) -> str | None:
     return best_raw if best_ratio >= 0.8 else None
 
 
+def box_of(result) -> list[int]:
+    box = result.box
+    if hasattr(box, "x"):
+        return [int(box.x), int(box.y), int(box.w), int(box.h)]
+    return [int(v) for v in box]
+
+
 def sort_row_major(results) -> list[tuple[int, int, int, int, str]]:
     """把 OCR 结果按「从上到下、从左到右」排序。"""
     items = [
-        (int(r.box.x), int(r.box.y), int(r.box.w), int(r.box.h), r.text)
+        (*box_of(r), r.text)
         for r in results
-        if getattr(r, "text", None)
+        if getattr(r, "text", None) and getattr(r, "box", None)
     ]
     if not items:
         return []
@@ -83,67 +101,100 @@ def sort_row_major(results) -> list[tuple[int, int, int, int, str]]:
     return ordered
 
 
-@AgentServer.custom_recognition("scan_flowers")
-class ScanFlowers(CustomRecognition):
-    """识别花房列表，记录已拥有的花，写入 config/flowers.json。"""
+def ocr_frame(context: Context, image, roi: list[int]) -> list[tuple[int, int, int, int, str]]:
+    detail = context.run_recognition(
+        "FlowerListOCR",
+        image,
+        pipeline_override={"FlowerListOCR": {"roi": list(roi)}},
+    )
+    if detail is None or not detail.hit:
+        return []
+    return sort_row_major(detail.all_results or [])
 
-    def analyze(
-        self,
-        context: Context,
-        argv: CustomRecognition.AnalyzeArg,
-    ) -> CustomRecognition.AnalyzeResult:
 
-        param = json.loads(argv.custom_recognition_param or "{}") or {}
+@AgentServer.custom_action("scan_flowers")
+class ScanFlowers(CustomAction):
+    """逐屏 OCR 花房列表，收集已拥有的花，直到遇到「未获得」分隔行。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = json.loads(argv.custom_action_param or "{}") or {}
         roi = param.get("roi") or DEFAULT_ROI
+        scroll = {**DEFAULT_SCROLL, **(param.get("scroll") or {})}
+        max_scrolls = int(param.get("max_scrolls", 30))
+
         base = base_dir()
         library_path = base / param.get("library", "resource/花朵库.txt")
         output_path = base / param.get("output", "config/flowers.json")
-
         if not library_path.exists():
-            return CustomRecognition.AnalyzeResult(
-                box=None,
-                detail={"error": f"花名库不存在: {library_path}"},
-            )
+            print(f"[scan_flowers] 花名库不存在: {library_path}")
+            return False
 
         pairs = load_library(library_path)
-
-        detail = context.run_recognition(
-            "FlowerListOCR",
-            argv.image,
-            pipeline_override={"FlowerListOCR": {"roi": list(roi)}},
-        )
-        if detail is None or not detail.hit:
-            return CustomRecognition.AnalyzeResult(
-                box=None,
-                detail={"error": "花名 OCR 未识别到内容"},
-            )
-
-        ordered = sort_row_major(detail.all_results or [])
+        controller = context.tasker.controller
 
         owned: list[str] = []
         unknown: list[str] = []
+        frames: list[dict] = []
         stopped = False
-        for _, _, _, _, text in ordered:
-            normalized = normalize(text)
-            if not normalized:
+        empty_streak = 0
+        no_new_streak = 0
+
+        for attempt in range(max_scrolls + 1):
+            image = controller.post_screencap().wait().get()
+            ordered = ocr_frame(context, image, roi)
+
+            names_in_frame = 0
+            for x, y, w, h, text in ordered:
+                normalized = normalize(text)
+                if not normalized:
+                    continue
+                if is_unowned(normalized):
+                    stopped = True
+                    break
+                if normalized.isdigit():
+                    continue
+                matched = match_name(normalized, pairs)
+                if matched is None:
+                    if text not in unknown:
+                        unknown.append(text)
+                    continue
+                names_in_frame += 1
+                if matched not in owned:
+                    owned.append(matched)
+
+            frames.append(
+                {
+                    "frame": len(frames) + 1,
+                    "stopped": stopped,
+                    "texts": [text for _, _, _, _, text in ordered],
+                }
+            )
+
+            if stopped:
+                break
+            if not ordered:
+                empty_streak += 1
+                if empty_streak >= 3:
+                    break
                 continue
-            if any(keyword in normalized for keyword in UNOWNED_KEYWORDS) or (
-                "未" in normalized and "获得" in normalized
-            ):
-                stopped = True
+            empty_streak = 0
+
+            if names_in_frame == 0:
+                no_new_streak += 1
+                if no_new_streak >= 2:
+                    break
+            else:
+                no_new_streak = 0
+
+            if attempt == max_scrolls:
                 break
 
-            matched = match_name(normalized, pairs)
-            if matched is None:
-                unknown.append(text)
-            elif matched not in owned:
-                owned.append(matched)
+            controller.post_swipe(*scroll["begin"], *scroll["end"], int(scroll["duration"])).wait()
+            time.sleep(int(scroll["delay"]) / 1000)
 
         if not owned and not stopped:
-            return CustomRecognition.AnalyzeResult(
-                box=None,
-                detail={"error": "没有识别到任何花名，可能不在花房页面"},
-            )
+            print("[scan_flowers] 没有识别到任何花名，可能不在花房页面")
+            return False
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
@@ -151,6 +202,7 @@ class ScanFlowers(CustomRecognition):
             "owned": owned,
             "unknown_texts": unknown,
             "stopped_at_unowned": stopped,
+            "frames": len(frames),
             "library_count": len(pairs),
         }
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=4), encoding="utf-8")
@@ -158,31 +210,12 @@ class ScanFlowers(CustomRecognition):
         debug_path = base / "debug" / "flowers_scan.json"
         debug_path.parent.mkdir(parents=True, exist_ok=True)
         debug_path.write_text(
-            json.dumps(
-                {
-                    "roi": list(roi),
-                    "ocr": [
-                        {"text": text, "box": [x, y, w, h]}
-                        for x, y, w, h, text in ordered
-                    ],
-                },
-                ensure_ascii=False,
-                indent=4,
-            ),
+            json.dumps({"roi": list(roi), "scroll": scroll, "frames": frames}, ensure_ascii=False, indent=4),
             encoding="utf-8",
         )
 
         print(
             f"[scan_flowers] owned={owned} unknown={unknown} "
-            f"stopped={stopped} output={output_path}"
+            f"stopped={stopped} frames={len(frames)} output={output_path}"
         )
-
-        return CustomRecognition.AnalyzeResult(
-            box=list(roi),
-            detail={
-                "owned": owned,
-                "unknown": unknown,
-                "stopped": stopped,
-                "output": str(output_path),
-            },
-        )
+        return True

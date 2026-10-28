@@ -1,6 +1,19 @@
 {
-    // 更新数据：点击花房图标，读取花房中已拥有的花，写入 config/flowers.json
+    // 更新数据：在花房读取已拥有的花，写入 config/flowers.json，最后回到森林主界面
     "UpdateFlowerData": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        // 等待花房按钮出现；不在主界面时先点返回
+        "timeout": 5000,
+        "next": [
+            "GreenhouseNav"
+        ],
+        "on_error": [
+            "BackButton",
+            "SaveScreenForDebug"
+        ]
+    },
+    "GreenhouseNav": {
         "recognition": "TemplateMatch",
         "template": "greenhouse.png",
         "green_mask": true,
@@ -8,19 +21,29 @@
         "action": "Click",
         // 等待花房页面加载
         "post_delay": 2000,
-        // 扫描失败时最多重试约 10 秒
-        "timeout": 10000,
         "next": [
             "ScanFlowers"
+        ]
+    },
+    "BackButton": {
+        "recognition": "TemplateMatch",
+        "template": "back.png",
+        "action": "Click",
+        "post_delay": 1000,
+        // 最多连续返回 5 次，避免死循环
+        "max_hit": 5,
+        "next": [
+            "UpdateFlowerData"
         ],
         "on_error": [
             "SaveScreenForDebug"
         ]
     },
     "ScanFlowers": {
-        "recognition": "Custom",
-        "custom_recognition": "scan_flowers",
-        "custom_recognition_param": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "scan_flowers",
+        "custom_action_param": {
             // 花名列表区域（720x1280 坐标）
             "roi": [
                 27,
@@ -28,12 +51,61 @@
                 663,
                 712
             ],
+            // 向下滚动一屏的 50% 左右，避免跳过「未获得」分隔行
+            "scroll": {
+                "begin": [
+                    360,
+                    900
+                ],
+                "end": [
+                    360,
+                    560
+                ],
+                "duration": 700,
+                "delay": 700
+            },
+            "max_scrolls": 30,
             "library": "resource/花朵库.txt",
             "output": "config/flowers.json"
         },
+        "next": [
+            "ReturnToForest"
+        ],
+        "on_error": [
+            "SaveScreenForDebug"
+        ]
+    },
+    "ReturnToForest": {
+        "recognition": "DirectHit",
+        "action": "Click",
+        // 底部导航中间的「森林」按钮
+        "target": [
+            360,
+            1204
+        ],
+        "post_delay": 1500,
+        "next": [
+            "WaitForest"
+        ]
+    },
+    "WaitForest": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 8000,
+        "next": [
+            "ForestVisible"
+        ],
+        "on_error": [
+            "SaveScreenForDebug"
+        ]
+    },
+    "ForestVisible": {
+        "recognition": "TemplateMatch",
+        "template": "forest.png",
+        "green_mask": true,
         "action": "DoNothing"
     },
-    // 供 scan_flowers 调用：整段花名区域做一次 OCR
+    // 供 scan_flowers 调用：对花名区域做一次 OCR
     "FlowerListOCR": {
         "recognition": "OCR",
         "roi": [
