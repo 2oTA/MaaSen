@@ -61,7 +61,10 @@
                     360,
                     560
                 ],
-                "duration": 700,
+                "steps": 8,
+                "duration": 600,
+                // 抬手前先在终点停住，等速度归零，避免列表惯性继续滑
+                "end_hold": 500,
                 "delay": 700
             },
             "max_scrolls": 30,

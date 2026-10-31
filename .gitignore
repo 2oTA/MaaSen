@@ -450,5 +450,8 @@ install
 # Tools
 tools/ImageCropper/**/*.png
 
+# 调试截图
+docs/tmp
+
 config
 debug

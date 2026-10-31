@@ -11,7 +11,14 @@ from maa.custom_action import CustomAction
 
 # 花名列表区域（720x1280 坐标）
 DEFAULT_ROI = [27, 266, 663, 712]
-DEFAULT_SCROLL = {"begin": [360, 900], "end": [360, 560], "duration": 700, "delay": 700}
+DEFAULT_SCROLL = {
+    "begin": [360, 900],
+    "end": [360, 560],
+    "steps": 8,
+    "duration": 600,
+    "end_hold": 500,
+    "delay": 700,
+}
 PUNCTUATION = re.compile(r"[\s\·・．.。,，、:：;；'\"“”‘’()（）\[\]【】<>《》_\-—~!！?？|/\\]+")
 
 
@@ -112,6 +119,31 @@ def ocr_frame(context: Context, image, roi: list[int]) -> list[tuple[int, int, i
     return sort_row_major(detail.all_results or [])
 
 
+def drag_scroll(controller, scroll: dict) -> None:
+    """按住 → 分步移动 → 在终点停住 end_hold 毫秒 → 抬手。
+
+    游戏列表的惯性是按「抬手瞬间的速度」算的：post_swipe 抬手时手指还在动，
+    所以会带着残余速度继续滑。这里拆成 touch_down/move/up 手动控制，
+    在终点静止 end_hold 毫秒让速度归零，再抬手就不会有惯性。
+    """
+    x1, y1 = scroll["begin"]
+    x2, y2 = scroll["end"]
+    steps = max(2, int(scroll.get("steps", 8)))
+    duration = max(100, int(scroll.get("duration", 600)))
+    end_hold = max(0, int(scroll.get("end_hold", 500)))
+
+    controller.post_touch_down(x1, y1, 0, 1).wait()
+    time.sleep(0.05)
+    for index in range(1, steps + 1):
+        ratio = index / steps
+        x = int(x1 + (x2 - x1) * ratio)
+        y = int(y1 + (y2 - y1) * ratio)
+        controller.post_touch_move(x, y, 0, 1).wait()
+        time.sleep(duration / 1000 / steps)
+    time.sleep(end_hold / 1000)
+    controller.post_touch_up(0).wait()
+
+
 @AgentServer.custom_action("scan_flowers")
 class ScanFlowers(CustomAction):
     """逐屏 OCR 花房列表，收集已拥有的花，直到遇到「未获得」分隔行。"""
@@ -189,7 +221,7 @@ class ScanFlowers(CustomAction):
             if attempt == max_scrolls:
                 break
 
-            controller.post_swipe(*scroll["begin"], *scroll["end"], int(scroll["duration"])).wait()
+            drag_scroll(controller, scroll)
             time.sleep(int(scroll["delay"]) / 1000)
 
         if not owned and not stopped:

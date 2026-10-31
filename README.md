@@ -47,6 +47,7 @@
 - 默认参数：`assets/resource/default_pipeline.json`
 - 农田地块坐标：[docs/zh_cn/farm/plots.md](./docs/zh_cn/farm/plots.md)
 - 「更新数据」依赖 Python Agent：需要本机 Python 并 `pip install MaaFw`（发版前需改为内置解释器）
+- 「更新数据」的滚动用 `touch_down / move / up` 手动实现，抬手前在终点停 `end_hold` 毫秒：游戏列表会按抬手速度做惯性滑，直接 `swipe` 会冲过头
 - 本地校验：`npm ci && npx @nekosu/maa-tools check`
 - 本地打包前先初始化模型子模块：`git submodule update --init --recursive`
 - 发版：推送 tag（如 `v0.1.0`）后 CI 自动打包发布
