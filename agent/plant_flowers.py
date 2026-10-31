@@ -3,8 +3,9 @@
 流程（每块地）：
 1. 在地块包围盒内识别「空地」（vacant land.png，绿幕掩码）
 2. 点击空地中心 → 弹出种植列表
-3. 在列表区域内 OCR，找到目标花名 → 点击花名文字上方 -50px 处的花朵图片
-4. 按住空地不松手，缓慢移动着「过」剩下的空地，直到该地块内识别不到空地
+3. 在列表区域内 OCR 找到目标花名 → 在花名文字上方 -50px 处的花朵图片上按下手指
+4. 手指全程不松手：按住的这一下就已经「拿起」了花，随后缓慢移动着过剩下的空地，
+   每经过一块空地都要重新识别，直到该地块内识别不到空地才抬手
 """
 
 import json
@@ -135,33 +136,35 @@ def move_slowly(controller, begin: tuple[int, int], end: tuple[int, int], steps:
 def drag_over_vacant(
     context: Context,
     controller,
+    start: tuple[int, int],
     roi: list[int],
     threshold: float,
     max_passes: int,
     move_steps: int,
     move_duration: int,
     hold: float,
+    press_hold: float,
 ) -> bool:
-    """按住空地不松手，缓慢移过剩下的空地，直到该地块内识别不到空地。
+    """从 start 点按下手指，全程不松手地拖过地块里的空地。
 
-    返回 True 表示地块内已经没有空地了。
+    start 就是花朵图片（花名文字中心 Y-50），按下这一下同时完成「拿起花」，
+    之后只移动不抬手，直到该地块内识别不到空地。返回 True 表示已种满。
     """
-    position: tuple[int, int] | None = None
+    position = start
     pressed = False
     try:
+        controller.post_touch_down(start[0], start[1], 0, 1).wait()
+        pressed = True
+        time.sleep(press_hold)  # 按住不动一下，让游戏确认「拿起」了这朵花
+
         for _ in range(max_passes):
             image = controller.post_screencap().wait().get()
             vacant = find_vacant(context, image, roi, threshold)
             if not vacant:
                 return True
             target = center_of(vacant[0])
-            if not pressed:
-                controller.post_touch_down(target[0], target[1], 0, 1).wait()
-                pressed = True
-                position = target
-            else:
-                move_slowly(controller, position, target, move_steps, move_duration)
-                position = target
+            move_slowly(controller, position, target, move_steps, move_duration)
+            position = target
             time.sleep(hold)
     finally:
         if pressed:
@@ -198,6 +201,7 @@ class PlantFlowers(CustomAction):
         move_steps = int(param.get("move_steps", 6))
         move_duration = int(param.get("move_duration", 500))
         hold = float(param.get("hold", 0.35))
+        press_hold = float(param.get("press_hold", 0.5))
         list_scroll = {**DEFAULT_LIST_SCROLL, **(param.get("list_scroll") or {})}
 
         if not flower:
@@ -245,6 +249,7 @@ class PlantFlowers(CustomAction):
                 move_steps,
                 move_duration,
                 hold,
+                press_hold,
                 list_scroll,
             )
             if result:
@@ -271,6 +276,7 @@ class PlantFlowers(CustomAction):
         move_steps: int,
         move_duration: int,
         hold: float,
+        press_hold: float,
         list_scroll: dict,
     ) -> bool:
         for attempt in range(1, max_attempts + 1):
@@ -281,16 +287,28 @@ class PlantFlowers(CustomAction):
                 return False
 
             x, y = center_of(vacant[0])
-            controller.post_click(x, y).wait()
+            controller.post_click(x, y).wait()  # 点空地弹出种植列表
             time.sleep(1.0)
 
-            if not self.choose_flower(context, controller, list_roi, target, name_offset_y, max_list_scrolls, list_scroll):
+            point = self.find_flower_point(
+                context, controller, list_roi, target, name_offset_y, max_list_scrolls, list_scroll
+            )
+            if point is None:
                 print(f"[plant_flowers] 地块{index} 的种植列表里没找到「{target}」")
                 return False
 
-            time.sleep(0.8)
+            print(f"[plant_flowers] 地块{index} 在花朵图片 {point} 按下，按住不放拖过空地")
             if drag_over_vacant(
-                context, controller, roi, threshold, max_passes, move_steps, move_duration, hold
+                context,
+                controller,
+                point,
+                roi,
+                threshold,
+                max_passes,
+                move_steps,
+                move_duration,
+                hold,
+                press_hold,
             ):
                 print(f"[plant_flowers] 地块{index} 种植完成")
                 return True
@@ -300,7 +318,7 @@ class PlantFlowers(CustomAction):
 
         return False
 
-    def choose_flower(
+    def find_flower_point(
         self,
         context: Context,
         controller,
@@ -309,19 +327,17 @@ class PlantFlowers(CustomAction):
         name_offset_y: int,
         max_list_scrolls: int,
         list_scroll: dict,
-    ) -> bool:
-        """在种植列表里翻页找目标花名，找到后点花名上方的花朵图片。"""
+    ) -> tuple[int, int] | None:
+        """在种植列表里翻页找目标花名，返回要按下的点（花名文字中心 Y+offset）。"""
         for scroll_index in range(max_list_scrolls + 1):
             image = controller.post_screencap().wait().get()
             texts = ocr_texts(context, image, list_roi)
             box = find_name_box(texts, target)
             if box is not None:
                 x, y, w, h = box
-                click_x = x + w // 2
-                click_y = y + h // 2 + name_offset_y
-                controller.post_click(click_x, click_y).wait()
-                print(f"[plant_flowers] 点击花朵图片 ({click_x}, {click_y})，文字框={box}")
-                return True
+                point = (x + w // 2, y + h // 2 + name_offset_y)
+                print(f"[plant_flowers] 找到「{target}」文字框={box}，按下点={point}")
+                return point
 
             if scroll_index == max_list_scrolls:
                 break
@@ -329,4 +345,4 @@ class PlantFlowers(CustomAction):
             drag_scroll(controller, list_scroll)
             time.sleep(int(list_scroll["delay"]) / 1000)
 
-        return False
+        return None

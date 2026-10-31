@@ -30,7 +30,7 @@
                 656,
                 380
             ],
-            // OCR 文字框中心再往上偏移，点到文字上方的花朵图片
+            // OCR 文字框中心再往上偏移，按到文字上方的花朵图片
             "name_offset_y": -50,
             "max_list_scrolls": 6,
             "max_attempts": 3,
@@ -38,6 +38,9 @@
             "vacant_threshold": 0.7,
             "move_steps": 6,
             "move_duration": 500,
+            // 按住花朵后先停一下，让游戏确认「拿起」了这朵花
+            "press_hold": 0.5,
+            // 每移动到一个空地后停一下，等种植动画播完再重新识别
             "hold": 0.35
         },
         "timeout": 5000,
