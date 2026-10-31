@@ -38,6 +38,9 @@
             "vacant_threshold": 0.7,
             "move_steps": 6,
             "move_duration": 500,
+            // 从花朵拖到「第一个」空地时走得更快，避免路过别的空地时把它们也种上
+            "first_move_steps": 3,
+            "first_move_duration": 150,
             // 按住花朵后先停一下，让游戏确认「拿起」了这朵花
             "press_hold": 0.5,
             // 每移动到一个空地后停一下，等种植动画播完再重新识别

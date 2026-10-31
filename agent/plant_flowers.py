@@ -142,6 +142,8 @@ def drag_over_vacant(
     max_passes: int,
     move_steps: int,
     move_duration: int,
+    first_move_steps: int,
+    first_move_duration: int,
     hold: float,
     press_hold: float,
 ) -> bool:
@@ -149,9 +151,13 @@ def drag_over_vacant(
 
     start 就是花朵图片（花名文字中心 Y-50），按下这一下同时完成「拿起花」，
     之后只移动不抬手，直到该地块内识别不到空地。返回 True 表示已种满。
+
+    第一步（从花朵到第一个空地）用 first_move_steps / first_move_duration 走，
+    比后续移动快得多：拖得慢的话，手指经过的其他空地会被一起种上。
     """
     position = start
     pressed = False
+    first = True
     try:
         controller.post_touch_down(start[0], start[1], 0, 1).wait()
         pressed = True
@@ -163,7 +169,10 @@ def drag_over_vacant(
             if not vacant:
                 return True
             target = center_of(vacant[0])
-            move_slowly(controller, position, target, move_steps, move_duration)
+            steps = first_move_steps if first else move_steps
+            duration = first_move_duration if first else move_duration
+            move_slowly(controller, position, target, steps, duration)
+            first = False
             position = target
             time.sleep(hold)
     finally:
@@ -200,6 +209,8 @@ class PlantFlowers(CustomAction):
         threshold = float(param.get("vacant_threshold", 0.7))
         move_steps = int(param.get("move_steps", 6))
         move_duration = int(param.get("move_duration", 500))
+        first_move_steps = int(param.get("first_move_steps", 3))
+        first_move_duration = int(param.get("first_move_duration", 150))
         hold = float(param.get("hold", 0.35))
         press_hold = float(param.get("press_hold", 0.5))
         list_scroll = {**DEFAULT_LIST_SCROLL, **(param.get("list_scroll") or {})}
@@ -248,6 +259,8 @@ class PlantFlowers(CustomAction):
                 threshold,
                 move_steps,
                 move_duration,
+                first_move_steps,
+                first_move_duration,
                 hold,
                 press_hold,
                 list_scroll,
@@ -275,6 +288,8 @@ class PlantFlowers(CustomAction):
         threshold: float,
         move_steps: int,
         move_duration: int,
+        first_move_steps: int,
+        first_move_duration: int,
         hold: float,
         press_hold: float,
         list_scroll: dict,
@@ -307,6 +322,8 @@ class PlantFlowers(CustomAction):
                 max_passes,
                 move_steps,
                 move_duration,
+                first_move_steps,
+                first_move_duration,
                 hold,
                 press_hold,
             ):
