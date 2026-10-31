@@ -22,45 +22,26 @@
 > 四角按测量时的顺序原样记录，未统一为顺时针或逆时针；中心取四角平均值。
 > 包围盒为四角的最小外接矩形，实际点击建议用中心点，或从包围盒向内收缩后再用。
 
-## 后续接入方式（待实现）
+## 接入方式（已实现）
 
-种植、浇水、采花等操作目前尚未实现，计划按以下结构与 ProjectInterface 配合：
+「种植」任务已按下面的结构接入，地块数据以包围盒形式写在 `agent/plant_flowers.py` 的 `PLOTS` 里，与上面表格一致：
 
-1. 每个「操作 × 地块」组合定义一个 pipeline 节点，例如 `Plant_Plot1` … `Plant_Plot6`，`target` 指向该地块中心，并默认 `enabled: false`
-2. 每种操作有一个入口节点，`next` 按 1→6 顺序列出 6 个地块节点；未启用的节点会被框架自动跳过
-3. `interface.json` 中用 `checkbox` 类型的选项让用户勾选地块，每个 case 的 `pipeline_override` 把对应节点 `enabled` 改成 `true`
-
-示意：
+1. `PlantPlot` 节点（自定义动作 `plant_plot`）把选中的地块号写进 `custom_action_param.plot`（`0` 表示全部地块），`next` 指向 `Plant`
+2. `Plant` 节点（自定义动作 `plant_flowers`）对每块地循环：识别空地 → 点空地 → 选花 → 按住拖过剩余空地，直到该地块内再识别不到空地
+3. `interface.json` 用 `select` 选择单个地块（`种植地块`），而不是原先设想的 `checkbox` 多选：一次运行动作序列只处理选中的地块，且 MaaFramework 的 `pipeline_override` 对 `custom_action_param` 是整对象替换，多个选项覆盖同一节点会互相顶掉（所以地块与花朵分别覆盖 `PlantPlot` 和 `Plant` 两个节点）
 
 ```jsonc
 {
-    "Plant_Plot1": {
-        "enabled": false,
-        "recognition": "DirectHit",
-        "action": "Click",
-        "target": [341, 641]
-    }
-}
-```
-
-```jsonc
-{
-    "种植地块": {
-        "type": "checkbox",
-        "cases": [
-            {
-                "name": "地块1",
-                "pipeline_override": {
-                    "Plant_Plot1": {
-                        "enabled": true
-                    }
-                }
-            }
-        ]
+    "PlantPlot": {
+        "action": "Custom",
+        "custom_action": "plant_plot",
+        "custom_action_param": {
+            "plot": 1
+        }
     }
 }
 ```
 
 ## 验证方法
 
-实现点击动作后，可先用一个临时节点依次点击 6 个地块中心，确认落点都在田块内、且不会点到相邻地块或界面按钮。
+真机验证时先只勾「种植」、选单个地块和一种已获得的花，观察：空地是否被正确识别、花名是否点中、拖动过程中是否连续种下、结束时是否把所有空地都种满。

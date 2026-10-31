@@ -1,0 +1,68 @@
+{
+    // 种植：在指定地块的空地上，种下「更新数据」里已拥有的花
+    // 地块与花朵由 interface.json 的「种植地块」「种植花朵」选项决定
+    "PlantPlot": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "plant_plot",
+        // 0 表示 6 块地全部种植；由「种植地块」选项覆盖
+        "custom_action_param": {
+            "plot": 1
+        },
+        "pre_delay": 0,
+        "post_delay": 0,
+        "timeout": 1000,
+        "next": [
+            "Plant"
+        ]
+    },
+    "Plant": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "plant_flowers",
+        // 由「种植花朵」选项覆盖；其余是调参用的默认值
+        "custom_action_param": {
+            "flower": "白百合",
+            // 种植列表区域（720x1280）：原始 35:920 ~ 855:1395
+            "list_roi": [
+                28,
+                736,
+                656,
+                380
+            ],
+            // OCR 文字框中心再往上偏移，点到文字上方的花朵图片
+            "name_offset_y": -50,
+            "max_list_scrolls": 6,
+            "max_attempts": 3,
+            "max_passes": 8,
+            "vacant_threshold": 0.7,
+            "move_steps": 6,
+            "move_duration": 500,
+            "hold": 0.35
+        },
+        "timeout": 5000,
+        "next": [],
+        "on_error": [
+            "SaveScreenForDebug"
+        ]
+    },
+    // 空地识别：地块包围盒由动作内按地块号覆盖 roi
+    "VacantLand": {
+        "recognition": "TemplateMatch",
+        "template": [
+            "vacant land.png"
+        ],
+        "green_mask": true,
+        "threshold": 0.7
+    },
+    // 种植列表的花名 OCR
+    "PlantListOCR": {
+        "recognition": "OCR",
+        "roi": [
+            28,
+            736,
+            656,
+            380
+        ]
+    }
+}

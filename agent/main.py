@@ -6,6 +6,7 @@ from maa.toolkit import Toolkit
 import flower_scan
 import my_action
 import my_reco
+import plant_flowers
 
 
 def main():

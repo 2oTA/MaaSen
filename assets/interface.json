@@ -51,6 +51,220 @@
             "entry": "UpdateFlowerData",
             "default_check": false,
             "description": "进入花房读取已拥有的花，结果写入 config/flowers.json，供后续种植选择使用"
+        },
+        {
+            "name": "种植",
+            "entry": "PlantPlot",
+            "default_check": false,
+            "option": [
+                "种植地块",
+                "种植花朵"
+            ],
+            "description": "在选定地块的空地上种下选定的花：点空地 → 在种植列表里找花名 → 点花名上方的花朵 → 按住拖过剩余空地"
         }
-    ]
+    ],
+    "option": {
+        "种植地块": {
+            "type": "select",
+            "default_case": "地块1",
+            "cases": [
+                {
+                    "name": "地块1",
+                    "pipeline_override": {
+                        "PlantPlot": {
+                            "custom_action_param": {
+                                "plot": 1
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "地块2",
+                    "pipeline_override": {
+                        "PlantPlot": {
+                            "custom_action_param": {
+                                "plot": 2
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "地块3",
+                    "pipeline_override": {
+                        "PlantPlot": {
+                            "custom_action_param": {
+                                "plot": 3
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "地块4",
+                    "pipeline_override": {
+                        "PlantPlot": {
+                            "custom_action_param": {
+                                "plot": 4
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "地块5",
+                    "pipeline_override": {
+                        "PlantPlot": {
+                            "custom_action_param": {
+                                "plot": 5
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "地块6",
+                    "pipeline_override": {
+                        "PlantPlot": {
+                            "custom_action_param": {
+                                "plot": 6
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "全部地块",
+                    "pipeline_override": {
+                        "PlantPlot": {
+                            "custom_action_param": {
+                                "plot": 0
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "种植花朵": {
+            "type": "select",
+            "default_case": "白百合",
+            "cases": [
+                {
+                    "name": "白百合",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "白百合"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "雏菊",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "雏菊"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "尤加利叶",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "尤加利叶"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "铃兰",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "铃兰"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "红郁金香",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "红郁金香"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "粉郁金香",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "粉郁金香"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "勿忘我",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "勿忘我"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "梦·瑶池花梦",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "梦·瑶池花梦"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "金鲤锦荷",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "金鲤锦荷"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "有凤来仪",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "有凤来仪"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "杏花微雨",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "杏花微雨"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "玉兔月华",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "玉兔月华"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
 }
