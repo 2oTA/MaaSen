@@ -50,7 +50,7 @@
             "name": "更新数据",
             "entry": "UpdateFlowerData",
             "default_check": false,
-            "description": "进入花房读取已拥有的花，结果写入 config/flowers.json，并按已获得的花刷新「种植花朵」候选（重启 MFAAvalonia 后生效）"
+            "description": "进入花房读取已拥有的花，结果写入 config/flowers.json，并按已获得的花刷新「种植花朵」候选（下次启动 MFAAvalonia 时生效）"
         },
         {
             "name": "种植",

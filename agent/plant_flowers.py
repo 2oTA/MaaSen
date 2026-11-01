@@ -233,7 +233,12 @@ class PlantFlowers(CustomAction):
 
         owned = load_owned(base / "config/flowers.json")
         if owned and target not in owned:
-            print(f"[plant_flowers] 注意：「{target}」不在 config/flowers.json 的已拥有列表里，仍然尝试种植")
+            print(
+                f"[plant_flowers] 「{target}」还没获得，游戏里的种植列表不会有它。"
+                f"已获得：{'、'.join(owned)}。"
+                "请在「种植花朵」里改选一朵已获得的，或先跑一次「更新数据」。"
+            )
+            return False
 
         plot = int(PENDING_PLOT.get("plot", 1))
         plots = list(PLOTS) if plot == 0 else [plot]

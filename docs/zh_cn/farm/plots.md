@@ -29,7 +29,7 @@
 1. `PlantPlot` 节点（自定义动作 `plant_plot`）把选中的地块号写进 `custom_action_param.plot`（`0` 表示全部地块），`next` 指向 `Plant`
 2. `Plant` 节点（自定义动作 `plant_flowers`）对每块地循环：识别空地 → 点空地弹出种植列表 → 找到目标花名 → **在花名上方的花朵图片上按下手指并保持不松手** → 按住拖过剩余空地，直到该地块内再识别不到空地才抬手
 3. `interface.json` 用 `select` 选择单个地块（`种植地块`），而不是原先设想的 `checkbox` 多选：一次运行动作序列只处理选中的地块，且 MaaFramework 的 `pipeline_override` 对 `custom_action_param` 是整对象替换，多个选项覆盖同一节点会互相顶掉（所以地块与花朵分别覆盖 `PlantPlot` 和 `Plant` 两个节点）
-4. `种植花朵` 的候选列表不另建文件，而是把 `interface.json` 里 `option` 的最后一项（`// >>> 种植花朵候选` 与 `// <<< 种植花朵候选` 之间）留给「更新数据」重写：任务按 `config/flowers.json` 的 `owned` 重新生成该项的 `cases`，界面因此只会显示已获得的花。该文件在启动时读取，刷新后需重启 MFAAvalonia
+4. `种植花朵` 的候选列表不另建文件，而是把 `interface.json` 里 `option` 的最后一项（`// >>> 种植花朵候选` 与 `// <<< 种植花朵候选` 之间）留给「更新数据」重写：任务按 `config/flowers.json` 的 `owned` 重新生成该项的 `cases`，界面因此只会显示已获得的花。MFAAvalonia 只在启动时读一次 `interface.json`，所以新候选要等下次启动才可见；种植本身不依赖界面刷新，开始前会校验所选的花是否已获得
 
 ```jsonc
 {

@@ -27,7 +27,7 @@
 
 > 「复位视野」依赖「进入游戏」结束时的森林场景；单独运行时请确保游戏已经进入森林。
 
-> 首次使用「种植」前先单独跑一次「更新数据」，它会按你实际拥有的花刷新「种植花朵」下拉框；刷新后**重启 MFAAvalonia** 才能在界面里看到新的候选列表。
+> 首次使用「种植」前先跑一次「更新数据」，它会按你实际拥有的花刷新「种植花朵」下拉框。MFAAvalonia 只在启动时读一次 `interface.json`（源码里是静态缓存，没有文件监听），所以**列表要等下次启动才变短**；不重启也能正常种——选一朵已获得的花即可，选到未获得的会立刻停下并列出你已拥有的花。
 
 ## 更新
 
@@ -52,7 +52,8 @@
 - 「更新数据」「种植」依赖 Python Agent：需要本机 Python 并 `pip install MaaFw`（发版前需改为内置解释器）
 - 「更新数据」的滚动用 `touch_down / move / up` 手动实现，抬手前在终点停 `end_hold` 毫秒：游戏列表会按抬手速度做惯性滑，直接 `swipe` 会冲过头
 - 「种植」的地块与花朵是两个 `select` 选项，分别覆盖 `PlantPlot` 与 `Plant` 两个节点的 `custom_action_param`——MaaFramework 的 `pipeline_override` 是整对象替换而不是深合并，两个参数必须落在不同节点上
-- 「种植花朵」的候选列表是 `interface.json` 里 `option` 的最后一项，两头有 `// >>> 种植花朵候选` / `// <<< 种植花朵候选` 标记；「更新数据」按 `config/flowers.json` 的 `owned` 直接重写这两行之间的内容，所以界面只显示已获得的花。界面在启动时读取该文件，刷新后需重启 MFAAvalonia。仓库里提交的默认值是完整 12 种花，没跑过「更新数据」时不会缺项
+- 「种植花朵」的候选列表是 `interface.json` 里 `option` 的最后一项，两头有 `// >>> 种植花朵候选` / `// <<< 种植花朵候选` 标记；「更新数据」按 `config/flowers.json` 的 `owned` 直接重写这两行之间的内容，所以界面只显示已获得的花。MFAAvalonia 只在启动时读一次 `interface.json`（`MaaProcessor.Interface` 是静态缓存，没有 FileSystemWatcher），改动在下次启动时生效；仓库里提交的默认值是完整 12 种花，没跑过「更新数据」时不会缺项
+- 「种植」在开始时校验所选的花：不在 `owned` 里就直接报错并列出已获得的花，不会白跑一趟列表 OCR
 - 本地校验：`npm ci && npx @nekosu/maa-tools check`
 - 本地打包前先初始化模型子模块：`git submodule update --init --recursive`
 - 发版：推送 tag（如 `v0.1.0`）后 CI 自动打包发布
