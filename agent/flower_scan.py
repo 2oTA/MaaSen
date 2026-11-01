@@ -1,6 +1,8 @@
 import difflib
 import json
+import os
 import re
+import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
@@ -168,33 +170,111 @@ def flower_option_block(owned: list[str]) -> str:
     return "\n".join("        " + line[4:] if line.strip() else line for line in dumped)
 
 
-def write_flower_option(base: Path, owned: list[str]) -> Path | None:
-    """把已获得的花写回 interface.json 的「种植花朵」候选项，没有花时保持原文件不动。"""
+def write_flower_option(base: Path, owned: list[str]) -> bool:
+    """把已获得的花写回 interface.json 的「种植花朵」候选项。
+
+    返回 True 表示候选确实变了（需要重启界面才能看到）。
+    """
     names = [name for name in owned if name]
     if not names:
         print("[scan_flowers] 没有已获得的花，保留现有的种植花朵下拉框")
-        return None
+        return False
 
     interface_path = base / "interface.json"
     if not interface_path.is_file():
         print(f"[scan_flowers] 找不到 {interface_path}，跳过刷新种植花朵候选")
-        return None
+        return False
 
     text = interface_path.read_text(encoding="utf-8")
     begin = text.find(OPTION_BEGIN)
     end = text.find(OPTION_END)
     if begin < 0 or end < begin:
         print("[scan_flowers] interface.json 里找不到种植花朵候选的标记，跳过刷新")
-        return None
+        return False
 
     head_line_end = text.find("\n", begin)
     if head_line_end < 0:
         print("[scan_flowers] interface.json 标记行不完整，跳过刷新")
-        return None
+        return False
+
     new_text = text[: head_line_end + 1] + flower_option_block(names) + "\n        " + text[end:]
+    if new_text == text:
+        print("[scan_flowers] 种植花朵候选没有变化，不用重启界面")
+        return False
+
     interface_path.write_text(new_text, encoding="utf-8")
     print(f"[scan_flowers] 已把种植花朵候选刷新为 {names} -> {interface_path}")
-    return interface_path
+    return True
+
+
+def client_process() -> tuple[int, Path] | None:
+    """找到启动本 agent 的界面进程（MFAAvalonia.exe），拿不到就返回 None。"""
+    try:
+        import ctypes
+        from ctypes import wintypes
+    except Exception:
+        return None
+
+    try:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        # PROCESS_QUERY_LIMITED_INFORMATION：普通权限就能拿到进程路径
+        handle = kernel32.OpenProcess(0x1000, False, os.getppid())
+        if not handle:
+            return None
+        try:
+            buffer = ctypes.create_unicode_buffer(1024)
+            size = wintypes.DWORD(len(buffer))
+            if not kernel32.QueryFullProcessImageNameW(handle, 0, buffer, ctypes.byref(size)):
+                return None
+            path = Path(buffer.value)
+        finally:
+            kernel32.CloseHandle(handle)
+    except Exception as error:
+        print(f"[scan_flowers] 读取父进程失败：{error}")
+        return None
+
+    if "mfa" not in path.stem.lower():
+        print(f"[scan_flowers] 不是由 MFAAvalonia 启动的（父进程 {path.name}），跳过自动重启")
+        return None
+    return os.getppid(), path
+
+
+def restart_client(delay: float = 8.0) -> bool:
+    """资源改完后让 MFAAvalonia 自己重启一次，新的「种植花朵」候选立刻生效。
+
+    MFA 只在启动时读一次 interface.json，运行中关窗还会弹「确认退出」，
+    所以只能用 taskkill /F 结束进程再 start 起来；这段命令丢给一个 detached
+    的 cmd 执行，这样 agent 跟着被结束时它仍然会跑完。
+    """
+    found = client_process()
+    if found is None:
+        return False
+
+    pid, exe = found
+    seconds = max(3, int(delay))
+    command = (
+        f'ping -n {seconds + 1} 127.0.0.1 >nul & '
+        f'taskkill /F /PID {pid} & '
+        f'start "" "{exe}"'
+    )
+    # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+    flags = 0x00000008 | 0x00000200
+    try:
+        subprocess.Popen(
+            ["cmd", "/c", command],
+            cwd=str(exe.parent),
+            creationflags=flags,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+        )
+    except Exception as error:
+        print(f"[scan_flowers] 启动重启脚本失败：{error}")
+        return False
+
+    print(f"[scan_flowers] {seconds} 秒后自动重启 MFAAvalonia，让新的「种植花朵」候选生效")
+    return True
 
 
 @AgentServer.custom_action("scan_flowers")
@@ -291,7 +371,8 @@ class ScanFlowers(CustomAction):
             "library_count": len(pairs),
         }
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=4), encoding="utf-8")
-        write_flower_option(base, owned)
+        if write_flower_option(base, owned):
+            restart_client()
 
         debug_path = base / "debug" / "flowers_scan.json"
         debug_path.parent.mkdir(parents=True, exist_ok=True)

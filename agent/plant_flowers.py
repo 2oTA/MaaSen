@@ -41,8 +41,11 @@ DEFAULT_LIST_SCROLL = {
     "delay": 700,
 }
 
-# PlantPlot 节点把用户选的地块写进来，随后 Plant 节点读取
-PENDING_PLOT = {"plot": 1}
+# 「种植地块」复选框：勾上的地块号由 plot_select 收集到这里，Plant 节点取走后清空
+SELECTED_PLOTS: list[int] = []
+
+# 还没跑过「更新数据」时，「种植花朵」下拉框里只有这一条提示
+NEED_UPDATE_HINT = "⚠"
 
 
 def expand(box: list[int], pad: int = 12) -> list[int]:
@@ -183,16 +186,18 @@ def drag_over_vacant(
     return not find_vacant(context, image, roi, threshold)
 
 
-@AgentServer.custom_action("plant_plot")
-class PlantPlot(CustomAction):
-    """只负责把用户选中的地块号传给后面的 Plant 节点。"""
+@AgentServer.custom_action("plot_select")
+class PlotSelect(CustomAction):
+    """收集复选框勾选的地块号；plot 为 0 表示这块地没勾选，直接跳过。"""
 
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         param = json.loads(argv.custom_action_param or "{}") or {}
         try:
-            PENDING_PLOT["plot"] = int(param.get("plot", 1))
+            plot = int(param.get("plot", 0))
         except (TypeError, ValueError):
-            PENDING_PLOT["plot"] = 1
+            plot = 0
+        if 0 < plot <= len(PLOTS) and plot not in SELECTED_PLOTS:
+            SELECTED_PLOTS.append(plot)
         return True
 
 
@@ -219,6 +224,13 @@ class PlantFlowers(CustomAction):
             print("[plant_flowers] 没有指定花名")
             return False
 
+        if flower.startswith(NEED_UPDATE_HINT):
+            print(
+                "[plant_flowers] 还没更新过花朵数据。请先在任务列表里把「更新数据」勾上跑一次"
+                "（跑完会自动重启 MFAAvalonia），再回来这里选要种的花。"
+            )
+            return False
+
         base = base_dir()
         library_path = base / "resource/花朵库.txt"
         if not library_path.exists():
@@ -232,7 +244,13 @@ class PlantFlowers(CustomAction):
             return False
 
         owned = load_owned(base / "config/flowers.json")
-        if owned and target not in owned:
+        if not owned:
+            print(
+                "[plant_flowers] 还没更新过花朵数据（config/flowers.json 不存在或没有已获得的花）。"
+                "请先跑一次「更新数据」（跑完会自动重启 MFAAvalonia），再回来种植。"
+            )
+            return False
+        if target not in owned:
             print(
                 f"[plant_flowers] 「{target}」还没获得，游戏里的种植列表不会有它。"
                 f"已获得：{'、'.join(owned)}。"
@@ -240,8 +258,12 @@ class PlantFlowers(CustomAction):
             )
             return False
 
-        plot = int(PENDING_PLOT.get("plot", 1))
-        plots = list(PLOTS) if plot == 0 else [plot]
+        plots = sorted(SELECTED_PLOTS)
+        SELECTED_PLOTS.clear()
+        if not plots:
+            print("[plant_flowers] 没有勾选任何地块，请在「种植地块」里至少勾选一块")
+            return False
+
         print(f"[plant_flowers] 目标花={target} 地块={plots}")
 
         controller = context.tasker.controller

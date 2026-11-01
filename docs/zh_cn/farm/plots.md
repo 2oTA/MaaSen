@@ -26,16 +26,16 @@
 
 「种植」任务已按下面的结构接入，地块数据以包围盒形式写在 `agent/plant_flowers.py` 的 `PLOTS` 里，与上面表格一致：
 
-1. `PlantPlot` 节点（自定义动作 `plant_plot`）把选中的地块号写进 `custom_action_param.plot`（`0` 表示全部地块），`next` 指向 `Plant`
-2. `Plant` 节点（自定义动作 `plant_flowers`）对每块地循环：识别空地 → 点空地弹出种植列表 → 找到目标花名 → **在花名上方的花朵图片上按下手指并保持不松手** → 按住拖过剩余空地，直到该地块内再识别不到空地才抬手
-3. `interface.json` 用 `select` 选择单个地块（`种植地块`），而不是原先设想的 `checkbox` 多选：一次运行动作序列只处理选中的地块，且 MaaFramework 的 `pipeline_override` 对 `custom_action_param` 是整对象替换，多个选项覆盖同一节点会互相顶掉（所以地块与花朵分别覆盖 `PlantPlot` 和 `Plant` 两个节点）
-4. `种植花朵` 的候选列表不另建文件，而是把 `interface.json` 里 `option` 的最后一项（`// >>> 种植花朵候选` 与 `// <<< 种植花朵候选` 之间）留给「更新数据」重写：任务按 `config/flowers.json` 的 `owned` 重新生成该项的 `cases`，界面因此只会显示已获得的花。MFAAvalonia 只在启动时读一次 `interface.json`，所以新候选要等下次启动才可见；种植本身不依赖界面刷新，开始前会校验所选的花是否已获得
+1. `PlantSelect1`~`PlantSelect6` 六个节点（自定义动作 `plot_select`）各挂一个地块号，勾选了哪块地，对应节点的 `custom_action_param.plot` 就是几，没勾的保持 `0`（跳过）；六个节点用 `next` 依次串联，最后指向 `Plant`
+2. `Plant` 节点（自定义动作 `plant_flowers`）对勾选的地块循环：识别空地 → 点空地弹出种植列表 → 找到目标花名 → **在花名上方的花朵图片上按下手指并保持不松手** → 按住拖过剩余空地，直到该地块内再识别不到空地才抬手
+3. `interface.json` 的「种植地块」是 `checkbox`，可同时勾多块地。之所以每块地要一个独立节点：MaaFramework 的 `pipeline_override` 对 `custom_action_param` 是整对象替换而不是深合并，多个 case 覆盖同一节点会互相顶掉
+4. `种植花朵` 的候选列表不另建文件，而是把 `interface.json` 里 `option` 的最后一项（`// >>> 种植花朵候选` 与 `// <<< 种植花朵候选` 之间）留给「更新数据」重写：任务按 `config/flowers.json` 的 `owned` 重新生成该项的 `cases`，界面因此只会显示已获得的花。仓库里提交的默认值是一条「⚠ 首次使用请先运行「更新数据」并等待自动重启」提示项 + 完整 12 种花。MFAAvalonia 只在启动时读一次 `interface.json`，所以「更新数据」在候选变化后会延迟 `taskkill` 掉自己再 `start` 起来自动重启，让新候选立刻生效
 
 ```jsonc
 {
-    "PlantPlot": {
+    "PlantSelect1": {
         "action": "Custom",
-        "custom_action": "plant_plot",
+        "custom_action": "plot_select",
         "custom_action_param": {
             "plot": 1
         }
@@ -45,4 +45,4 @@
 
 ## 验证方法
 
-真机验证时先只勾「种植」、选单个地块和一种已获得的花，观察：空地是否被正确识别、花名是否点中、拖动过程中是否连续种下、结束时是否把所有空地都种满。
+真机验证时先只勾「种植」、勾选一块地、选一种已获得的花，观察：空地是否被正确识别、花名是否点中、拖动过程中是否连续种下、结束时是否把所有空地都种满。

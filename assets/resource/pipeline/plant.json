@@ -1,16 +1,75 @@
 {
-    // 种植：在指定地块的空地上，种下「更新数据」里已拥有的花
-    // 地块与花朵由 interface.json 的「种植地块」「种植花朵」选项决定
-    "PlantPlot": {
+    // 种植：在选定地块的空地上，种下「更新数据」里已拥有的花
+    // 「种植地块」是复选框：每块地对应一个 PlantSelect 节点，勾选后由选项把 plot 改成地块号，
+    // 没勾选的就保持 0（跳过）；6 个节点依次串联，最后由 Plant 统一执行种植
+    "PlantSelect1": {
         "recognition": "DirectHit",
         "action": "Custom",
-        "custom_action": "plant_plot",
-        // 0 表示 6 块地全部种植；由「种植地块」选项覆盖
+        "custom_action": "plot_select",
+        // 0 表示不种这块地；勾选「地块1」时由选项覆盖成 1
         "custom_action_param": {
-            "plot": 1
+            "plot": 0
         },
-        "pre_delay": 0,
-        "post_delay": 0,
+        "timeout": 1000,
+        "next": [
+            "PlantSelect2"
+        ]
+    },
+    "PlantSelect2": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "plot_select",
+        "custom_action_param": {
+            "plot": 0
+        },
+        "timeout": 1000,
+        "next": [
+            "PlantSelect3"
+        ]
+    },
+    "PlantSelect3": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "plot_select",
+        "custom_action_param": {
+            "plot": 0
+        },
+        "timeout": 1000,
+        "next": [
+            "PlantSelect4"
+        ]
+    },
+    "PlantSelect4": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "plot_select",
+        "custom_action_param": {
+            "plot": 0
+        },
+        "timeout": 1000,
+        "next": [
+            "PlantSelect5"
+        ]
+    },
+    "PlantSelect5": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "plot_select",
+        "custom_action_param": {
+            "plot": 0
+        },
+        "timeout": 1000,
+        "next": [
+            "PlantSelect6"
+        ]
+    },
+    "PlantSelect6": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "plot_select",
+        "custom_action_param": {
+            "plot": 0
+        },
         "timeout": 1000,
         "next": [
             "Plant"

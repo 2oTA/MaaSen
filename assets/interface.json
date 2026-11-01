@@ -50,28 +50,31 @@
             "name": "更新数据",
             "entry": "UpdateFlowerData",
             "default_check": false,
-            "description": "进入花房读取已拥有的花，结果写入 config/flowers.json，并按已获得的花刷新「种植花朵」候选（下次启动 MFAAvalonia 时生效）"
+            "description": "进入花房读取已拥有的花，结果写入 config/flowers.json，并按已获得的花刷新「种植花朵」候选。候选有变化时会自动重启 MFAAvalonia 让新候选立刻生效，所以请把它放在任务列表的最后"
         },
         {
             "name": "种植",
-            "entry": "PlantPlot",
+            "entry": "PlantSelect1",
             "default_check": false,
             "option": [
                 "种植地块",
                 "种植花朵"
             ],
-            "description": "在选定地块的空地上种下选定的花：点空地 → 在种植列表里找花名 → 点花名上方的花朵 → 按住拖过剩余空地"
+            "description": "在勾选的地块里种下选定的花：点空地 → 在种植列表里找花名 → 点花名上方的花朵 → 按住拖过剩余空地。「种植地块」可多选"
         }
     ],
     "option": {
+        // 地块是复选框：每块地对应 plant.json 里一个 PlantSelect 节点，勾上就把它改成对应地块号
         "种植地块": {
-            "type": "select",
-            "default_case": "地块1",
+            "type": "checkbox",
+            "default_case": [
+                "地块1"
+            ],
             "cases": [
                 {
                     "name": "地块1",
                     "pipeline_override": {
-                        "PlantPlot": {
+                        "PlantSelect1": {
                             "custom_action_param": {
                                 "plot": 1
                             }
@@ -81,7 +84,7 @@
                 {
                     "name": "地块2",
                     "pipeline_override": {
-                        "PlantPlot": {
+                        "PlantSelect2": {
                             "custom_action_param": {
                                 "plot": 2
                             }
@@ -91,7 +94,7 @@
                 {
                     "name": "地块3",
                     "pipeline_override": {
-                        "PlantPlot": {
+                        "PlantSelect3": {
                             "custom_action_param": {
                                 "plot": 3
                             }
@@ -101,7 +104,7 @@
                 {
                     "name": "地块4",
                     "pipeline_override": {
-                        "PlantPlot": {
+                        "PlantSelect4": {
                             "custom_action_param": {
                                 "plot": 4
                             }
@@ -111,7 +114,7 @@
                 {
                     "name": "地块5",
                     "pipeline_override": {
-                        "PlantPlot": {
+                        "PlantSelect5": {
                             "custom_action_param": {
                                 "plot": 5
                             }
@@ -121,19 +124,9 @@
                 {
                     "name": "地块6",
                     "pipeline_override": {
-                        "PlantPlot": {
+                        "PlantSelect6": {
                             "custom_action_param": {
                                 "plot": 6
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "全部地块",
-                    "pipeline_override": {
-                        "PlantPlot": {
-                            "custom_action_param": {
-                                "plot": 0
                             }
                         }
                     }
@@ -143,8 +136,18 @@
         // >>> 种植花朵候选（由「更新数据」按 config/flowers.json 的 owned 自动重写，勿手改；本项必须是 option 的最后一项）
         "种植花朵": {
             "type": "select",
-            "default_case": "白百合",
+            "default_case": "⚠ 首次使用请先运行「更新数据」并等待自动重启",
             "cases": [
+                {
+                    "name": "⚠ 首次使用请先运行「更新数据」并等待自动重启",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "⚠ 首次使用请先运行「更新数据」并等待自动重启"
+                            }
+                        }
+                    }
+                },
                 {
                     "name": "白百合",
                     "pipeline_override": {
