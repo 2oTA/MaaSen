@@ -52,7 +52,7 @@
 - 「更新数据」「种植」依赖 Python Agent：需要本机 Python 并 `pip install MaaFw`（发版前需改为内置解释器）
 - 「更新数据」的滚动用 `touch_down / move / up` 手动实现，抬手前在终点停 `end_hold` 毫秒：游戏列表会按抬手速度做惯性滑，直接 `swipe` 会冲过头
 - 「种植」的地块与花朵是两个 `select` 选项，分别覆盖 `PlantPlot` 与 `Plant` 两个节点的 `custom_action_param`——MaaFramework 的 `pipeline_override` 是整对象替换而不是深合并，两个参数必须落在不同节点上
-- 「种植花朵」的候选列表由「更新数据」写入 `pi/flowers_option.json`（`interface.json` 通过 `import` 引入，同名 option 以被导入文件为准），所以界面只显示已获得的花；文件在地启动时读取，改完需重启 MFAAvalonia。`interface.json` 里保留了一份完整花名作为兜底，不支持 `import` 的旧界面会退回使用它
+- 「种植花朵」的候选列表是 `interface.json` 里 `option` 的最后一项，两头有 `// >>> 种植花朵候选` / `// <<< 种植花朵候选` 标记；「更新数据」按 `config/flowers.json` 的 `owned` 直接重写这两行之间的内容，所以界面只显示已获得的花。界面在启动时读取该文件，刷新后需重启 MFAAvalonia。仓库里提交的默认值是完整 12 种花，没跑过「更新数据」时不会缺项
 - 本地校验：`npm ci && npx @nekosu/maa-tools check`
 - 本地打包前先初始化模型子模块：`git submodule update --init --recursive`
 - 发版：推送 tag（如 `v0.1.0`）后 CI 自动打包发布

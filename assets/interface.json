@@ -11,11 +11,6 @@
     // 填写项目地址和版本号可实现自动更新功能
     "github": "https://github.com/2oTA/MaaSen",
     "version": "0.1.1",
-    // 「种植花朵」的候选列表拆到单独文件，由「更新数据」按已获得的花重新生成
-    // 不支持 import 的旧版界面会退回到下面 option 里的完整花名列表
-    "import": [
-        "./pi/flowers_option.json"
-    ],
     "controller": [
         {
             "name": "安卓端",
@@ -145,7 +140,7 @@
                 }
             ]
         },
-        // 兜底定义：正常情况下会被 pi/flowers_option.json 覆盖成「只含已获得的花」
+        // >>> 种植花朵候选（由「更新数据」按 config/flowers.json 的 owned 自动重写，勿手改；本项必须是 option 的最后一项）
         "种植花朵": {
             "type": "select",
             "default_case": "白百合",
@@ -272,5 +267,6 @@
                 }
             ]
         }
+        // <<< 种植花朵候选
     }
 }

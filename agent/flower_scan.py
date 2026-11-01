@@ -144,41 +144,57 @@ def drag_scroll(controller, scroll: dict) -> None:
     controller.post_touch_up(0).wait()
 
 
-def flower_option_payload(owned: list[str]) -> dict:
-    """把已获得的花生成为 PI 片段：界面上的「种植花朵」下拉框只显示这些花。"""
+OPTION_BEGIN = "// >>> 种植花朵候选"
+OPTION_END = "// <<< 种植花朵候选"
+
+
+def flower_option_block(owned: list[str]) -> str:
+    """生成 interface.json 中「种植花朵」选项的 JSON 文本（缩进对齐 option 一级）。"""
     names = [name for name in owned if name]
-    return {
-        "option": {
-            "种植花朵": {
-                "type": "select",
-                "default_case": names[0] if names else "",
-                "cases": [
-                    {
-                        "name": name,
-                        "pipeline_override": {"Plant": {"custom_action_param": {"flower": name}}},
-                    }
-                    for name in names
-                ],
-            }
+    option = {
+        "种植花朵": {
+            "type": "select",
+            "default_case": names[0],
+            "cases": [
+                {
+                    "name": name,
+                    "pipeline_override": {"Plant": {"custom_action_param": {"flower": name}}},
+                }
+                for name in names
+            ],
         }
     }
+    dumped = json.dumps(option, ensure_ascii=False, indent=4).splitlines()[1:-1]
+    return "\n".join("        " + line[4:] if line.strip() else line for line in dumped)
 
 
 def write_flower_option(base: Path, owned: list[str]) -> Path | None:
-    """刷新界面选项文件；没有任何已获得的花时保持原文件不动。"""
+    """把已获得的花写回 interface.json 的「种植花朵」候选项，没有花时保持原文件不动。"""
     names = [name for name in owned if name]
     if not names:
         print("[scan_flowers] 没有已获得的花，保留现有的种植花朵下拉框")
         return None
 
-    option_path = base / "pi" / "flowers_option.json"
-    option_path.parent.mkdir(parents=True, exist_ok=True)
-    option_path.write_text(
-        json.dumps(flower_option_payload(names), ensure_ascii=False, indent=4),
-        encoding="utf-8",
-    )
-    print(f"[scan_flowers] 已刷新种植花朵候选 {names} -> {option_path}")
-    return option_path
+    interface_path = base / "interface.json"
+    if not interface_path.is_file():
+        print(f"[scan_flowers] 找不到 {interface_path}，跳过刷新种植花朵候选")
+        return None
+
+    text = interface_path.read_text(encoding="utf-8")
+    begin = text.find(OPTION_BEGIN)
+    end = text.find(OPTION_END)
+    if begin < 0 or end < begin:
+        print("[scan_flowers] interface.json 里找不到种植花朵候选的标记，跳过刷新")
+        return None
+
+    head_line_end = text.find("\n", begin)
+    if head_line_end < 0:
+        print("[scan_flowers] interface.json 标记行不完整，跳过刷新")
+        return None
+    new_text = text[: head_line_end + 1] + flower_option_block(names) + "\n        " + text[end:]
+    interface_path.write_text(new_text, encoding="utf-8")
+    print(f"[scan_flowers] 已把种植花朵候选刷新为 {names} -> {interface_path}")
+    return interface_path
 
 
 @AgentServer.custom_action("scan_flowers")
