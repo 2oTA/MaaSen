@@ -112,6 +112,12 @@ def install_resource():
         working_dir / "assets" / "interface.json",
         install_path,
     )
+    # interface.json 的 import 片段（「种植花朵」候选由「更新数据」运行时改写）
+    shutil.copytree(
+        working_dir / "assets" / "pi",
+        install_path / "pi",
+        dirs_exist_ok=True,
+    )
 
     with open(install_path / "interface.json", "r", encoding="utf-8") as f:
         interface = jsonc.load(f)

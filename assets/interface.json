@@ -11,6 +11,11 @@
     // 填写项目地址和版本号可实现自动更新功能
     "github": "https://github.com/2oTA/MaaSen",
     "version": "0.1.1",
+    // 「种植花朵」的候选列表拆到单独文件，由「更新数据」按已获得的花重新生成
+    // 不支持 import 的旧版界面会退回到下面 option 里的完整花名列表
+    "import": [
+        "./pi/flowers_option.json"
+    ],
     "controller": [
         {
             "name": "安卓端",
@@ -50,7 +55,7 @@
             "name": "更新数据",
             "entry": "UpdateFlowerData",
             "default_check": false,
-            "description": "进入花房读取已拥有的花，结果写入 config/flowers.json，供后续种植选择使用"
+            "description": "进入花房读取已拥有的花，结果写入 config/flowers.json，并按已获得的花刷新「种植花朵」候选（重启 MFAAvalonia 后生效）"
         },
         {
             "name": "种植",
@@ -140,6 +145,7 @@
                 }
             ]
         },
+        // 兜底定义：正常情况下会被 pi/flowers_option.json 覆盖成「只含已获得的花」
         "种植花朵": {
             "type": "select",
             "default_case": "白百合",

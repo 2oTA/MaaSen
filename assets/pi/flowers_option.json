@@ -1,0 +1,133 @@
+{
+    // 本文件由「更新数据」任务自动生成，只保留已获得的花，
+    // 供界面上的「种植花朵」下拉框使用（interface.json 通过 import 引入）。
+    // 手动修改会在下次「更新数据」时被覆盖；改完需重启 MFAAvalonia 才会生效。
+    "option": {
+        "种植花朵": {
+            "type": "select",
+            "default_case": "白百合",
+            "cases": [
+                {
+                    "name": "白百合",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "白百合"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "雏菊",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "雏菊"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "尤加利叶",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "尤加利叶"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "铃兰",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "铃兰"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "红郁金香",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "红郁金香"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "粉郁金香",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "粉郁金香"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "勿忘我",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "勿忘我"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "梦·瑶池花梦",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "梦·瑶池花梦"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "金鲤锦荷",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "金鲤锦荷"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "有凤来仪",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "有凤来仪"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "杏花微雨",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "杏花微雨"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "玉兔月华",
+                    "pipeline_override": {
+                        "Plant": {
+                            "custom_action_param": {
+                                "flower": "玉兔月华"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}

@@ -144,6 +144,43 @@ def drag_scroll(controller, scroll: dict) -> None:
     controller.post_touch_up(0).wait()
 
 
+def flower_option_payload(owned: list[str]) -> dict:
+    """把已获得的花生成为 PI 片段：界面上的「种植花朵」下拉框只显示这些花。"""
+    names = [name for name in owned if name]
+    return {
+        "option": {
+            "种植花朵": {
+                "type": "select",
+                "default_case": names[0] if names else "",
+                "cases": [
+                    {
+                        "name": name,
+                        "pipeline_override": {"Plant": {"custom_action_param": {"flower": name}}},
+                    }
+                    for name in names
+                ],
+            }
+        }
+    }
+
+
+def write_flower_option(base: Path, owned: list[str]) -> Path | None:
+    """刷新界面选项文件；没有任何已获得的花时保持原文件不动。"""
+    names = [name for name in owned if name]
+    if not names:
+        print("[scan_flowers] 没有已获得的花，保留现有的种植花朵下拉框")
+        return None
+
+    option_path = base / "pi" / "flowers_option.json"
+    option_path.parent.mkdir(parents=True, exist_ok=True)
+    option_path.write_text(
+        json.dumps(flower_option_payload(names), ensure_ascii=False, indent=4),
+        encoding="utf-8",
+    )
+    print(f"[scan_flowers] 已刷新种植花朵候选 {names} -> {option_path}")
+    return option_path
+
+
 @AgentServer.custom_action("scan_flowers")
 class ScanFlowers(CustomAction):
     """逐屏 OCR 花房列表，收集已拥有的花，直到遇到「未获得」分隔行。"""
@@ -238,6 +275,7 @@ class ScanFlowers(CustomAction):
             "library_count": len(pairs),
         }
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=4), encoding="utf-8")
+        write_flower_option(base, owned)
 
         debug_path = base / "debug" / "flowers_scan.json"
         debug_path.parent.mkdir(parents=True, exist_ok=True)
