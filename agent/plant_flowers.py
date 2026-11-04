@@ -29,6 +29,22 @@ PLOTS = {
     6: [330, 769, 202, 106],
 }
 
+# 同一批地块的四个角（左上、右上、右下、左下）。地块是斜着的菱形，
+# 外接矩形在斜对角方向会和邻居重叠（比如 1 和 2 重叠 109x64），所以识别到空地后
+# 还要用「点是否落在本块地的四边形内」再过滤一次，避免点到邻居的地里
+PLOT_QUADS = {
+    1: [(210, 644), (340, 572), (458, 630), (316, 700)],
+    2: [(349, 706), (481, 636), (592, 694), (458, 762)],
+    3: [(459, 765), (596, 695), (669, 737), (532, 808)],
+    4: [(52, 711), (198, 645), (320, 703), (168, 773)],
+    5: [(208, 774), (340, 703), (460, 766), (322, 833)],
+    6: [(330, 835), (462, 769), (532, 809), (398, 875)],
+}
+
+# 四边形过滤向外放宽的比例（以地块中心为基准缩放），抵消手工量取的一点点误差。
+# 1.10 在竖直方向约放宽 5px、水平方向约 12px，仍远小于相邻地块格子的间距（约 40px）
+QUAD_MARGIN = 1.10
+
 # 种植列表区域（720x1280）：用户给的原始 35:920 ~ 855:1395，按 ×0.8 换算
 DEFAULT_LIST_ROI = [28, 736, 656, 380]
 
@@ -79,8 +95,38 @@ def load_owned(path: Path) -> list[str]:
     return [str(name) for name in payload.get("owned", [])]
 
 
-def find_vacant(context: Context, image, roi: list[int], threshold: float) -> list[list[int]]:
-    """在指定区域内找空地，按匹配分数从高到低返回包围盒。"""
+def inside_quad(point: tuple[int, int], quad: list[tuple[int, int]], margin: float = 1.0) -> bool:
+    """射线法判断点是否在四边形内；margin>1 时把四边形以中心为基准向外放大。"""
+    x, y = point
+    cx = sum(p[0] for p in quad) / len(quad)
+    cy = sum(p[1] for p in quad) / len(quad)
+    xs = [cx + (px - cx) * margin for px, _ in quad]
+    ys = [cy + (py - cy) * margin for _, py in quad]
+
+    inside = False
+    count = len(quad)
+    for index in range(count):
+        x1, y1 = xs[index], ys[index]
+        x2, y2 = xs[(index + 1) % count], ys[(index + 1) % count]
+        if (y1 > y) != (y2 > y):
+            cross = x1 + (y - y1) * (x2 - x1) / (y2 - y1)
+            if x < cross:
+                inside = not inside
+    return inside
+
+
+def find_vacant(
+    context: Context,
+    image,
+    roi: list[int],
+    threshold: float,
+    quad: list[tuple[int, int]] | None = None,
+) -> list[list[int]]:
+    """在指定区域内找空地，按匹配分数从高到低返回包围盒。
+
+    给了 quad 就只保留「格子中心落在该四边形内」的匹配：外接矩形在斜对角方向
+    会和邻居重叠，不过滤的话会把邻居的地也当成自己的。
+    """
     detail = context.run_recognition(
         "VacantLand",
         image,
@@ -90,6 +136,12 @@ def find_vacant(context: Context, image, roi: list[int], threshold: float) -> li
         return []
     results = getattr(detail, "filtered_results", None) or detail.all_results or []
     scored = [(box_of(result), float(getattr(result, "score", 0.0))) for result in results]
+    if quad is not None:
+        scored = [
+            (box, score)
+            for box, score in scored
+            if inside_quad((box[0] + box[2] // 2, box[1] + box[3] // 2), quad, QUAD_MARGIN)
+        ]
     scored.sort(key=lambda item: -item[1])
     return [box for box, _ in scored]
 
@@ -142,6 +194,7 @@ def drag_over_vacant(
     controller,
     start: tuple[int, int],
     roi: list[int],
+    quad: list[tuple[int, int]],
     threshold: float,
     max_passes: int,
     move_steps: int,
@@ -169,7 +222,7 @@ def drag_over_vacant(
 
         for _ in range(max_passes):
             image = controller.post_screencap().wait().get()
-            vacant = find_vacant(context, image, roi, threshold)
+            vacant = find_vacant(context, image, roi, threshold, quad)
             if not vacant:
                 return True
             target = center_of(vacant[0])
@@ -184,7 +237,7 @@ def drag_over_vacant(
             controller.post_touch_up(0).wait()
 
     image = controller.post_screencap().wait().get()
-    return not find_vacant(context, image, roi, threshold)
+    return not find_vacant(context, image, roi, threshold, quad)
 
 
 @AgentServer.custom_action("plot_select")
@@ -278,6 +331,7 @@ class PlantFlowers(CustomAction):
                 controller,
                 index,
                 roi,
+                PLOT_QUADS[index],
                 target,
                 list_roi,
                 name_offset_y,
@@ -307,6 +361,7 @@ class PlantFlowers(CustomAction):
         controller,
         index: int,
         roi: list[int],
+        quad: list[tuple[int, int]],
         target: str,
         list_roi: list[int],
         name_offset_y: int,
@@ -324,7 +379,7 @@ class PlantFlowers(CustomAction):
     ) -> bool:
         for attempt in range(1, max_attempts + 1):
             image = controller.post_screencap().wait().get()
-            vacant = find_vacant(context, image, roi, threshold)
+            vacant = find_vacant(context, image, roi, threshold, quad)
             if not vacant:
                 print(f"[plant_flowers] 地块{index} 没有识别到空地（第 {attempt} 次）")
                 return False
@@ -346,6 +401,7 @@ class PlantFlowers(CustomAction):
                 controller,
                 point,
                 roi,
+                quad,
                 threshold,
                 max_passes,
                 move_steps,
