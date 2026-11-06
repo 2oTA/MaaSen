@@ -56,11 +56,17 @@ def find_water_scarce(
     results = getattr(detail, "filtered_results", None) or detail.all_results or []
     scored = [(box_of(result), float(getattr(result, "score", 0.0))) for result in results]
     if only_in_plots:
-        scored = [
+        kept = [
             (box, score)
             for box, score in scored
             if inside_any_plot((box[0] + box[2] // 2, box[1] + box[3] // 2))
         ]
+        if scored and not kept:
+            print(
+                f"[watering] 识别到 {len(scored)} 个疑似缺水的地，但都不在 6 块地的范围内，"
+                "大概率是镜头被拖动/缩放过，请先跑一次「复位视野」再浇水"
+            )
+        scored = kept
     scored.sort(key=lambda item: -item[1])
     return [box for box, _ in scored]
 
