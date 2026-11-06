@@ -15,6 +15,7 @@
 - ✅ **复位视野**：双指捏合缩放到最小，再把镜头拖回中央，每次进入森林后视角一致
 - 🔄 **更新数据**：进入花房读取已拥有的花，结果写入 `config/flowers.json`，并把「种植」里的「种植花朵」候选刷新为已获得的花（候选有变化时自动重启 MFAAvalonia 立刻生效）
 - 🌱 **种植**：勾选地块（可多选）与花朵，点空地弹出种植列表 → 在花名上方的花朵图片上按下手指 → **全程不松手**地拖过该地块剩余的空地
+- 💧 **浇水**：识别农田里缺水的地 → 点一下让游戏弹出洒水壶 → 在洒水壶上按下手指，**全程不松手**地拖过所有缺水的地，全部浇完才抬手
 
 （更多功能开发中……）
 
@@ -46,15 +47,16 @@
 ## 开发
 
 - 开发文档见 [docs/zh_cn/develop/](./docs/zh_cn/develop/how_to_develop.md)
-- 任务链：`assets/resource/pipeline/launch_game.json`（进入游戏）、`reset_view.json`（复位视野）、`greenhouse.json`（更新数据）、`plant.json`（种植）
+- 任务链：`assets/resource/pipeline/launch_game.json`（进入游戏）、`reset_view.json`（复位视野）、`greenhouse.json`（更新数据）、`plant.json`（种植）、`water.json`（浇水）
 - 默认参数：`assets/resource/default_pipeline.json`
 - 农田地块坐标：[docs/zh_cn/farm/plots.md](./docs/zh_cn/farm/plots.md)
-- 「更新数据」「种植」依赖 Python Agent：需要本机 Python 并 `pip install MaaFw`（发版前需改为内置解释器）
+- 「更新数据」「种植」「浇水」依赖 Python Agent：需要本机 Python 并 `pip install MaaFw`（发版前需改为内置解释器）
 - 「更新数据」的滚动用 `touch_down / move / up` 手动实现，抬手前在终点停 `end_hold` 毫秒：游戏列表会按抬手速度做惯性滑，直接 `swipe` 会冲过头
 - 「种植」的地块与花朵是两个选项：「种植地块」是 `checkbox`（可多选，每块地对应一个独立节点 `PlantSelect1`~`PlantSelect6` 的 `custom_action_param`），「种植花朵」是 `select`（覆盖 `Plant` 节点）。之所以每块地单独一个节点，是因为 MaaFramework 的 `pipeline_override` 对 `custom_action_param` 是整对象替换而不是深合并，多个 case 覆盖同一节点会互相顶掉
 - 「种植花朵」的候选列表是 `interface.json` 里 `option` 的最后一项，两头有 `// >>> 种植花朵候选` / `// <<< 种植花朵候选` 标记；「更新数据」按 `config/flowers.json` 的 `owned` 直接重写这两行之间的内容，所以界面只显示已获得的花。仓库里提交的默认值是一条「⚠ 首次使用请先运行「更新数据」并等待自动重启」提示项 + 完整 12 种花，第一次跑完更新数据后提示项就会被真实候选替换
 - MFAAvalonia 只在启动时读一次 `interface.json`（`MaaProcessor.Interface` 是静态缓存，没有 FileSystemWatcher），而且任务运行中关窗会弹确认框，所以「更新数据」在候选变化后是用 detached 的 `cmd` 延迟 `taskkill /F` 掉父进程再 `start` 起来，实现自动重启
 - 「种植」在开始时校验所选的花：候选还是提示项、没跑过「更新数据」、或选中的花不在 `owned` 里，都会直接报错并说明下一步，不会白跑一趟列表 OCR；一块地都没勾选也会直接提示
+- 「浇水」不按地块四边形过滤（`only_in_plots: false`）：游戏镜头可以拖动/缩放，地块坐标只在「复位视野」后的固定视角成立，而缺水格子本身辨识度高，宁可宽松一点也不漏浇；识别区域 `farm_roi` 是比 6 块地并集更宽松的一块矩形
 - 本地校验：`npm ci && npx @nekosu/maa-tools check`
 - 本地打包前先初始化模型子模块：`git submodule update --init --recursive`
 - 发版：推送 tag（如 `v0.1.0`）后 CI 自动打包发布

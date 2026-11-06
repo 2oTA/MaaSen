@@ -1,0 +1,57 @@
+{
+    // 浇水：把农田里缺水的土地浇一遍
+    // 识别「缺水的地」→ 点一下让游戏弹出洒水壶 → 按住洒水壶拖过所有缺水的地，浇完才松手
+    "Water": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "water_plots",
+        "custom_action_param": {
+            // 农田整体区域（720x1280）：比 6 块地的并集再宽松一些，镜头稍微缩放/平移也能扫到
+            "farm_roi": [
+                30,
+                500,
+                660,
+                420
+            ],
+            "water_threshold": 0.7,
+            "can_threshold": 0.7,
+            // 默认不按地块四边形过滤：游戏镜头可以拖动/缩放，地块坐标只在「复位视野」后的
+            // 固定视角成立；缺水格子本身辨识度很高，误判风险比漏浇小
+            "only_in_plots": false,
+            // 按住洒水壶后先停一下，让游戏确认「拿起」了
+            "press_hold": 0.5,
+            // 每移动到一块缺水的地之后停一下，等浇水动画播完再重新识别
+            "hold": 0.35,
+            "move_steps": 6,
+            "move_duration": 500,
+            "max_passes": 16,
+            // 一轮扫完还有没浇到的就再来一轮
+            "max_rounds": 3,
+            // 点完缺水的地之后，等洒水壶弹出来的时间
+            "click_wait": 1.0
+        },
+        "timeout": 5000,
+        "next": [],
+        "on_error": [
+            "SaveScreenForDebug"
+        ]
+    },
+    // 缺水的地：地块上有蓝色水滴的格子
+    "WaterScarceLand": {
+        "recognition": "TemplateMatch",
+        "template": [
+            "waterScarce land.png"
+        ],
+        "green_mask": true,
+        "threshold": 0.7
+    },
+    // 浇水用的洒水壶，点完缺水的地后出现在界面上
+    "WateringCan": {
+        "recognition": "TemplateMatch",
+        "template": [
+            "watering can.png"
+        ],
+        "green_mask": true,
+        "threshold": 0.7
+    }
+}
