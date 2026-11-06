@@ -1,7 +1,7 @@
 """浇水：把农田里缺水的土地全部浇一遍。
 
 流程（一轮）：
-1. 在农田区域内识别「缺水的地」（waterScarce land.png，绿幕掩码）
+1. 在农田区域内识别「缺水的地」（只用水滴模板 water drop.png，绿幕掩码）
 2. 点一下其中一块，游戏会弹出浇水用的洒水壶
 3. 在洒水壶上按下手指，全程不松手
 4. 按住不放，逐块移动到缺水格子中心，每到一处停一下等浇水动画
@@ -89,6 +89,10 @@ def find_watering_can(
     return box_of(best)
 
 
+def near(a: tuple[int, int], b: tuple[int, int], tolerance: int = 25) -> bool:
+    return abs(a[0] - b[0]) <= tolerance and abs(a[1] - b[1]) <= tolerance
+
+
 def drag_over_scarce(
     context: Context,
     controller,
@@ -109,6 +113,7 @@ def drag_over_scarce(
     position = start
     pressed = False
     watered = 0
+    visited: list[tuple[int, int]] = []
     try:
         controller.post_touch_down(start[0], start[1], 0, 1).wait()
         pressed = True
@@ -117,11 +122,14 @@ def drag_over_scarce(
         for _ in range(max_passes):
             image = controller.post_screencap().wait().get()
             tiles = find_water_scarce(context, image, farm_roi, threshold, only_in_plots)
-            if not tiles:
+            # 已经去过、但还没消失的格子不再去（否则会一直在同一块上打转）
+            fresh = [box for box in tiles if not any(near(center_of(box), point) for point in visited)]
+            if not fresh:
                 return True, watered
-            target = center_of(tiles[0])
+            target = center_of(fresh[0])
             move_slowly(controller, position, target, move_steps, move_duration)
             position = target
+            visited.append(target)
             watered += 1
             time.sleep(hold)
     finally:
@@ -138,7 +146,7 @@ class WaterPlots(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         param = json.loads(argv.custom_action_param or "{}") or {}
         farm_roi = [int(v) for v in (param.get("farm_roi") or DEFAULT_FARM_ROI)]
-        water_threshold = float(param.get("water_threshold", 0.7))
+        water_threshold = float(param.get("water_threshold", 0.65))
         can_threshold = float(param.get("can_threshold", 0.7))
         can_roi = param.get("can_roi")
         only_in_plots = bool(param.get("only_in_plots", True))

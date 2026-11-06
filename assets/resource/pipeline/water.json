@@ -13,11 +13,14 @@
                 660,
                 420
             ],
-            "water_threshold": 0.7,
+            // 真正缺水的地在 0.75~0.80，没缺水的格子在被地块四边形卡掉后最多到 0.63，
+            // 0.65 正好卡在两堆中间；真机偏模糊的话可以再往下调到 0.6
+            "water_threshold": 0.65,
             "can_threshold": 0.7,
-            // 默认不按地块四边形过滤：游戏镜头可以拖动/缩放，地块坐标只在「复位视野」后的
-            // 固定视角成立；缺水格子本身辨识度很高，误判风险比漏浇小
-            "only_in_plots": false,
+            // 只认落在 6 块地四边形内的缺水格子：整块地皮识别分只有 0.6 左右，
+            // 和没缺水的格子分数混在一起，所以模板换成只截水滴的小图（见 WaterScarceLand），
+            // 再用地块四边形把范围卡死
+            "only_in_plots": true,
             // 按住洒水壶后先停一下，让游戏确认「拿起」了
             "press_hold": 0.5,
             // 每移动到一块缺水的地之后停一下，等浇水动画播完再重新识别
@@ -36,11 +39,12 @@
             "SaveScreenForDebug"
         ]
     },
-    // 缺水的地：地块上有蓝色水滴的格子
+    // 缺水的地：只截「滴水的水滴」那一小块（从 waterScarce land.png 里裁 20×26），
+    // 整块地皮做模板时没缺水的格子也能到 0.6，切小以后真正缺水的地 ≥0.74、其余 ≤0.65，分得开
     "WaterScarceLand": {
         "recognition": "TemplateMatch",
         "template": [
-            "waterScarce land.png"
+            "water drop.png"
         ],
         "green_mask": true,
         "threshold": 0.7
